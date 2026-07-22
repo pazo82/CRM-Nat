@@ -1,0 +1,133 @@
+%% P1 — Mappa del modello dati CRM NoLimits (condivisa Piano A / Piano B)
+%% Le entita sono le stesse; le divergenze di meccanismo A/B sono annotate negli attributi.
+%% Legenda cardinalita (crow's foot):  ||=uno   o{=zero-o-molti   o|=zero-o-uno   }o--o{=molti-a-molti
+erDiagram
+
+    %% ===================== ENTITA CORE =====================
+    CONTATTI {
+        string nome_cognome
+        string email "PII, vive solo qui (hub)"
+        string contatto_id "chiave join · A materializzato / B lookup"
+        string fonte "canale + dettaglio · write-once"
+        bool   cliente_in_regola "A · flag anti-fuga (no importi)"
+        multi  assessment_certificazioni "etichette di sintesi"
+    }
+    ORGANIZZAZIONI {
+        string ragione_sociale
+        string settore_dimensione
+    }
+    PRODOTTI {
+        string nome
+        string tipologia "FONTE DI VERITA del routing"
+        string linea_business
+        money  prezzo_base
+        string corso_successivo "suggerimento (self-ref)"
+    }
+    EDIZIONI {
+        date inizio_fine
+        int  max_iscritti
+        int  iscritti_attuali "A materializzato / B rollup"
+        string stato
+    }
+    DEAL {
+        string pipeline_fase "Scuola / Coaching / Aziendale"
+        money  importo "dato contrattuale"
+        string pagatore "Contatto o Organizzazione"
+        money  saldo_da_incassare "A Mirror (sub condicione) / B rollup"
+        string esito_motivo
+    }
+    WEBINAR {
+        string codice "chiave gruppo MailerLite"
+        string tipo "vendita / nutrimento"
+        datetime data
+        int    metriche "A materializzate / B rollup"
+    }
+    ACQUISTI {
+        string prodotto_edizione
+        money  importo_quota "== FATTURATO =="
+        string tipo "acquisto/omaggio/abbonamento/storno"
+        string codice_tipo "chiave di routing"
+        date   data
+    }
+    PAGAMENTI {
+        money  importo "con segno · == INCASSATO =="
+        date   scadenza_pagamento
+        string stato "da pagare/pagato/scaduto"
+        string segregazione "A muro di board / B permessi campo"
+    }
+    ABBONAMENTI {
+        string tipo "CoachMag / Coach the Coach"
+        string stato "== SOLO STATO (no fatturato) =="
+        date   scadenza_rinnovo
+    }
+
+    %% ===================== PONTE / ASSOCIAZIONE =====================
+    ISCRIZIONI_WEBINAR {
+        bool   ha_partecipato
+        string assegnato_a "Vanessa / Laura"
+        string esito_recall
+    }
+    ISCRIZIONI_CORSI {
+        string stato_avanzamento "== EROGAZIONE =="
+        string checklist_pre_corso
+        string certificazione
+    }
+    AFFILIAZIONI {
+        string ruolo "dipendente/titolare/referente"
+        string periodo
+    }
+
+    %% ===================== OPERATIVE =====================
+    SESSIONI_COACHING {
+        int    numero_sessione
+        string tipo "coaching/mentoring/assessment"
+        string stato "programmata/svolta/annullata"
+    }
+    INTERAZIONI {
+        datetime data
+        string tipo "chiamata/WhatsApp/email"
+        string nota "timeline scheda (log MANUALE)"
+    }
+    ATTIVITA {
+        string descrizione
+        string assegnatario
+        date   deadline
+    }
+    ASSESSMENT_EROGATI {
+        string tipo "vocabolario dal catalogo"
+        date   data
+        string esito "SOLO B (in A subitem + etichetta)"
+    }
+
+    %% ===================== RELAZIONI =====================
+    CONTATTI       ||--o{ AFFILIAZIONI        : "appartiene a"
+    ORGANIZZAZIONI ||--o{ AFFILIAZIONI        : "raggruppa"
+    PRODOTTI       ||--o{ EDIZIONI            : "ha edizioni"
+    PRODOTTI       ||--o{ PRODOTTI            : "corso successivo"
+    PRODOTTI       ||--o{ WEBINAR             : "promosso in"
+    CONTATTI       ||--o{ ISCRIZIONI_WEBINAR  : "si iscrive"
+    WEBINAR        ||--o{ ISCRIZIONI_WEBINAR  : "raccoglie"
+    CONTATTI       ||--o{ DEAL                : "genera"
+    ORGANIZZAZIONI ||--o{ DEAL                : "commissiona"
+    DEAL           }o--o{ PRODOTTI            : "oggetto offerta N-N"
+    CONTATTI       ||--o{ ACQUISTI            : "acquisisce"
+    PRODOTTI       ||--o{ ACQUISTI            : "e acquistato"
+    EDIZIONI       ||--o{ ACQUISTI            : "riferita in"
+    DEAL           ||--o{ ACQUISTI            : "vinto (opz)"
+    ABBONAMENTI    ||--o{ ACQUISTI            : "attivazione + rinnovi"
+    ACQUISTI       ||--o| ISCRIZIONI_CORSI    : "eroga se corso (1-1)"
+    EDIZIONI       ||--o{ ISCRIZIONI_CORSI    : "iscrive"
+    CONTATTI       ||--o{ ISCRIZIONI_CORSI    : "frequenta"
+    ACQUISTI       ||--o{ PAGAMENTI           : "rate"
+    CONTATTI       ||--o{ PAGAMENTI           : "intestatario"
+    CONTATTI       ||--o{ ABBONAMENTI         : "sottoscrive"
+    CONTATTI       ||--o{ SESSIONI_COACHING   : "riceve"
+    DEAL           ||--o{ SESSIONI_COACHING   : "pacchetto"
+    CONTATTI       ||--o{ INTERAZIONI         : "timeline"
+    DEAL           ||--o{ INTERAZIONI         : "note datate (opz)"
+    CONTATTI       ||--o{ ATTIVITA            : "riferimento"
+    DEAL           ||--o{ ATTIVITA            : "riferimento"
+    ISCRIZIONI_CORSI ||--o{ ATTIVITA          : "riferimento"
+    CONTATTI       ||--o{ ASSESSMENT_EROGATI  : "svolge (B)"
+    ISCRIZIONI_CORSI ||--o{ ASSESSMENT_EROGATI: "contesto (B)"
+    SESSIONI_COACHING ||--o{ ASSESSMENT_EROGATI : "contesto (B)"

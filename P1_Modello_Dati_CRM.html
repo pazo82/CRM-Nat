@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P1 · Modello dati CRM NoLimits</title>
+<style>
+  :root{
+    --paper:#e9edf2; --panel:#f7f9fb; --ink:#17212e; --ink-soft:#4a5768;
+    --line:#c6cfda; --line-soft:#dbe2ea;
+    --hub:#3550b4; --econ:#b26a00; --catalogo:#2b6a63; --ponte:#6b4aa0; --operativa:#4a6172; --bonly:#b23a6b;
+    --econ-fill:#f6ead2; --hub-fill:#e5e9f8; --catalogo-fill:#e0efec; --ponte-fill:#ece5f6; --operativa-fill:#e4ebef; --bonly-fill:#f7e3ec;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --radius:3px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; font-family:var(--sans); color:var(--ink); background:var(--paper);
+    background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+    background-size:26px 26px; line-height:1.5;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:26px 20px 80px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:18px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft)}
+  h1{font-size:26px;margin:6px 0 4px;letter-spacing:-.01em;font-weight:800}
+  .sub{color:var(--ink-soft);font-size:14px;max-width:70ch}
+  .docref{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:8px}
+
+  /* controls */
+  .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:18px 0 6px}
+  .seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:var(--radius);overflow:hidden}
+  .seg button{font-family:var(--mono);font-size:12px;letter-spacing:.04em;padding:7px 12px;background:var(--panel);border:0;border-right:1px solid var(--line);cursor:pointer;color:var(--ink)}
+  .seg button:last-child{border-right:0}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+  .toggle{font-family:var(--mono);font-size:12px;display:inline-flex;gap:7px;align-items:center;cursor:pointer;user-select:none;border:1.5px solid var(--line);border-radius:var(--radius);padding:6px 11px;background:var(--panel)}
+  .toggle[data-on="true"]{border-color:var(--econ);background:var(--econ-fill);color:#6d4200}
+  .ctl-label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+
+  /* layer note banner */
+  .layernote{font-family:var(--mono);font-size:12px;color:var(--ink-soft);border-left:3px solid var(--line);padding:6px 12px;margin:12px 0 4px;min-height:1.2em;transition:border-color .2s,color .2s}
+  body.layer-a .layernote{border-color:var(--hub)}
+  body.layer-b .layernote{border-color:var(--bonly)}
+
+  /* economic spine (signature) */
+  .spine{margin:20px 0 8px;border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:16px}
+  .spine h2{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--econ);margin:0 0 12px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .snode{font-family:var(--mono);font-size:12.5px;font-weight:600;padding:9px 12px;border:1.5px solid var(--ink);border-radius:var(--radius);background:#fff;cursor:pointer;white-space:nowrap}
+  .snode.econ{border-color:var(--econ);background:var(--econ-fill)}
+  .snode.hub{border-color:var(--hub);background:var(--hub-fill)}
+  .snode .tag{display:block;font-size:9.5px;letter-spacing:.1em;color:var(--ink-soft);font-weight:400;text-transform:uppercase}
+  .arrow{font-family:var(--mono);font-size:11px;color:var(--ink-soft);white-space:nowrap}
+  .arrow b{color:var(--ink)}
+
+  /* board / cards */
+  .layer-group{margin-top:26px}
+  .layer-head{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:12px;display:flex;justify-content:space-between}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  .card{position:relative;text-align:left;border:1.5px solid var(--line);border-left:4px solid var(--cat,--line);background:var(--panel);border-radius:var(--radius);padding:12px 13px;cursor:pointer;font:inherit;color:inherit;transition:box-shadow .12s,transform .12s,border-color .12s,opacity .15s}
+  .card:hover{box-shadow:0 4px 14px rgba(23,33,46,.12);transform:translateY(-1px)}
+  .card:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .card[data-cat="hub"]{--cat:var(--hub)} .card[data-cat="econ"]{--cat:var(--econ)}
+  .card[data-cat="catalogo"]{--cat:var(--catalogo)} .card[data-cat="ponte"]{--cat:var(--ponte)}
+  .card[data-cat="operativa"]{--cat:var(--operativa)} .card[data-cat="bonly"]{--cat:var(--bonly)}
+  .card .cname{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:6px}
+  .card .cdesc{font-size:12px;color:var(--ink-soft);margin-top:5px}
+  .badge{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:20px;border:1px solid var(--cat);color:var(--cat);white-space:nowrap}
+  .badge.solo-b{border-color:var(--bonly);color:var(--bonly);background:var(--bonly-fill)}
+  .card.active{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+  .card.related{border-left-width:8px}
+  body.dim .card:not(.active):not(.related){opacity:.32}
+  body.spotlight .card:not([data-cat="econ"]):not([data-cat="hub"]){opacity:.28}
+  /* B-only ghosting per layer */
+  body.layer-a .card[data-cat="bonly"]{opacity:.4;border-style:dashed}
+  body.layer-a .card[data-cat="bonly"] .cdesc::after{content:" — in A: subitem + etichetta, non una tabella."}
+
+  /* detail panel */
+  .detail{position:fixed;top:0;right:0;height:100vh;width:390px;max-width:92vw;background:#fff;border-left:2px solid var(--ink);box-shadow:-8px 0 30px rgba(23,33,46,.14);transform:translateX(100%);transition:transform .22s ease;overflow-y:auto;z-index:40;padding:20px 20px 40px}
+  .detail.open{transform:translateX(0)}
+  .detail .close{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:12px;border:1.5px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:5px 9px;cursor:pointer}
+  .detail .dcat{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dcat,var(--ink-soft))}
+  .detail h3{font-size:20px;margin:4px 0 2px;font-weight:800}
+  .detail .droles{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .detail .ddesc{font-size:13.5px;color:var(--ink-soft);margin:6px 0 14px}
+  .block{margin:16px 0}
+  .block .bh{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--line-soft);padding-bottom:4px;margin-bottom:8px}
+  .attr,.rel{font-size:12.5px;margin:5px 0;font-family:var(--mono)}
+  .attr b{font-weight:700}
+  .attr span{color:var(--ink-soft)}
+  .rel a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--ink-soft);cursor:pointer}
+  .rel .card-badge{color:var(--ink-soft)}
+  .mech{border:1px solid var(--line);border-radius:var(--radius);padding:9px 11px;margin:7px 0;font-size:12.5px;background:var(--panel)}
+  .mech .ml{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);display:block;margin-bottom:3px}
+  .mech.on{border-color:var(--ink);background:#fff;box-shadow:0 0 0 1px var(--ink)}
+  body.layer-a .mech.a{border-color:var(--hub)} body.layer-a .mech.a .ml{color:var(--hub)}
+  body.layer-b .mech.b{border-color:var(--bonly)} body.layer-b .mech.b .ml{color:var(--bonly)}
+  .watch{font-size:12.5px;margin:6px 0;padding-left:16px;position:relative;color:#7a4a00}
+  .watch::before{content:"▲";position:absolute;left:0;font-size:9px;top:3px;color:var(--econ)}
+  .dref{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:16px;border-top:1px solid var(--line-soft);padding-top:8px}
+  .backdrop{position:fixed;inset:0;background:rgba(23,33,46,.28);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
+  .backdrop.on{opacity:1;pointer-events:auto}
+
+  .hint{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:22px;text-align:center}
+  @media (max-width:560px){
+    .detail{width:100%;max-width:100%;height:82vh;top:auto;bottom:0;transform:translateY(100%);border-left:0;border-top:2px solid var(--ink);border-radius:10px 10px 0 0}
+    .detail.open{transform:translateY(0)}
+    h1{font-size:22px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto}}
+</style>
+</head>
+<body class="layer-comune">
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CRM NoLimits · P1 — Mappa del modello dati</div>
+    <h1>Le stesse entità, due meccanismi</h1>
+    <p class="sub">Modello dati condiviso da entrambe le architetture. Le entità sono le stesse; cambia <em>come</em> si esprimono relazioni, valori derivati e riservatezza. Clicca un'entità per il dettaglio; usa l'interruttore per vedere il meccanismo del Piano A o del Piano B.</p>
+    <div class="docref">Fonti · Piano A: Documento_Architettura_CRM_v2_2.md — Piano B: Documento_Architettura_CRM_Airtable_Noloco_rev_1_1</div>
+  </header>
+
+  <div class="controls">
+    <span class="ctl-label">Meccanismo</span>
+    <div class="seg" role="group" aria-label="Scegli il piano">
+      <button data-layer="comune" aria-pressed="true">Comune</button>
+      <button data-layer="a" aria-pressed="false">Piano A · Monday</button>
+      <button data-layer="b" aria-pressed="false">Piano B · Airtable+Noloco</button>
+    </div>
+    <button class="toggle" id="spotlight" data-on="false" aria-pressed="false">◎ Faro cuore economico</button>
+  </div>
+  <div class="layernote" id="layernote"></div>
+
+  <section class="spine" aria-label="Il cuore economico">
+    <h2>Il cuore economico — il flusso del denaro</h2>
+    <div class="flow" id="flow">
+      <button class="snode hub" data-go="contatti">CONTATTI<span class="tag">hub</span></button>
+      <span class="arrow">┈ tutto pende da qui ┈</span>
+    </div>
+    <div class="flow" style="margin-top:12px">
+      <button class="snode" data-go="deal">DEAL</button>
+      <span class="arrow">──<b>vinto</b>──▶</span>
+      <button class="snode econ" data-go="acquisti">ACQUISTI<span class="tag">fatturato</span></button>
+      <span class="arrow">──<b>rate</b>──▶</span>
+      <button class="snode econ" data-go="pagamenti">PAGAMENTI<span class="tag">incassato</span></button>
+    </div>
+    <div class="flow" style="margin-top:10px">
+      <button class="snode" data-go="abbonamenti">ABBONAMENTI<span class="tag">solo stato</span></button>
+      <span class="arrow">──<b>attivazione + rinnovi</b>──▶</span>
+      <button class="snode econ" data-go="acquisti">ACQUISTI</button>
+      <span class="arrow">──<b>se corso (1:1)</b>──▶</span>
+      <button class="snode econ" data-go="iscr_corsi">ISCRIZIONI CORSI<span class="tag">erogazione</span></button>
+    </div>
+  </section>
+
+  <div id="board"></div>
+  <p class="hint">Suggerimento: clicca un'entità → si evidenziano quelle collegate. Esc chiude il dettaglio.</p>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+<aside class="detail" id="detail" aria-live="polite"></aside>
+
+<script>
+const CAT_LABEL={hub:"Hub centrale",econ:"Cuore economico",catalogo:"Anagrafica / catalogo",ponte:"Tabella ponte",operativa:"Operativa / log",bonly:"Operativa · solo Piano B"};
+const LAYERNOTE={
+  comune:"COMUNE — Stessi 9 blocchi core + ponti + operative. Cuore economico: Acquisti=fatturato · Pagamenti=incassato · Iscrizioni Corsi=erogazione · Abbonamenti=stato.",
+  a:"PIANO A (Monday) — N:N via board ponte · derivati materializzati/Mirror · Pagamenti murata (muro di board) · chiave di join = contatto_id materializzato.",
+  b:"PIANO B (Airtable+Noloco) — N:N nativo · derivati rollup/lookup · Pagamenti = permessi di campo (F2 coperto) · email via lookup · + tabella Assessment erogati."
+};
+
+const E={
+  contatti:{n:"Contatti",cat:"hub",roles:["Hub","Priorità #1"],desc:"L'hub centrale: ogni record è una persona. Da qui pende tutto — è la spina della scheda 360.",
+    attrs:[["Anagrafica","nome, email (PII, vive solo qui), telefono, località"],["contatto_id","chiave di aggancio dei satelliti"],["fonte","canale + dettaglio, write-once"],["cliente_in_regola","flag sì/no per Laura, senza importi"],["Assessment / Certificazioni","etichette di sintesi (filtro in negativo per up-selling)"]],
+    mech:{comune:"Consultazione via relazioni native; valori di sintesi (n° webinar, n° acquisti) come derivati.",a:"Attenzione performance con molte Connect (regola di densità). Chiave dei satelliti = contatto_id (Item ID) materializzato. Sintesi = campi materializzati o Mirror.",b:"Nessun vincolo di densità. Email portata ai satelliti via lookup nativo (non materializzata). Sintesi = rollup nativi."},
+    watch:["La scheda 360 (priorità #1) dipende dal log disciplinato delle Interazioni.","Superficie GDPR concentrata qui (PII)."],ref:"A §3.1 / §3.7 · B §2.2 / §2.7"},
+  organizzazioni:{n:"Organizzazioni",cat:"catalogo",roles:["Fuori MVP"],desc:"Aziende clienti o potenziali; serve al coaching aziendale e al relationship mapping persone-aziende.",
+    attrs:[["Dati azienda","settore, dimensione, località, sito"],["Note","relazione aziendale"]],
+    mech:{comune:"Minimale (oggi 2 clienti aziendali). Il ruolo 'pagatore' è un campo del Deal, non dell'organizzazione.",a:"Board di primo livello.",b:"Tabella di primo livello."},
+    watch:[],ref:"A §3.1 · B §2.2"},
+  prodotti:{n:"Prodotti / Servizi",cat:"catalogo",roles:["Fonte di verità del routing"],desc:"Il catalogo dell'offerta. Il TIPO del prodotto decide dove si registrano acquisto ed erogazione.",
+    attrs:[["Tipologia","corso, mini-corso, modulo, coaching, abbonamento, stand-alone, magnete, spazio pubbl."],["Linea / target / prezzo base",""],["corso_successivo","self-reference, suggerimento non vincolo"],["Assessment previsti",""]],
+    mech:{comune:"Sede unica del vocabolario (assessment, codici di routing).",a:"codice di routing stabile, distinto dall'etichetta visualizzata.",b:"Self-reference e collegamenti come linked record nativi."},
+    watch:["Trappola label-ID: instradare per etichetta si rompe; serve un codice stabile."],ref:"A §3.1 / §3.4 · B §2.2"},
+  edizioni:{n:"Edizioni",cat:"catalogo",roles:[],desc:"L'edizione concreta di un corso (es. Coaching School 2026-27). Le Iscrizioni Corsi puntano qui, non al prodotto generico.",
+    attrs:[["Prodotto di riferimento",""],["Date / max iscritti / stato",""],["Iscritti attuali","numero reale"]],
+    mech:{comune:"'Mario è iscritto alla Coaching School 2026-27', non 'alla Coaching School'.",a:"Promossa da subitem a board di primo livello. 'Iscritti attuali' materializzato.",b:"Tabella nativa. 'Iscritti attuali' = rollup. Lezioni/weekend: piccola tabella se servirà."},
+    watch:[],ref:"A §3.1 · B §2.2"},
+  deal:{n:"Deal / Offerte",cat:"catalogo",roles:["Pipeline"],desc:"La pipeline di vendita. Alla chiusura vinta genera la riga in Acquisti — ma NON è il registro economico.",
+    attrs:[["Pipeline / fase","Scuola · Coaching · Aziendale (3 pipeline)"],["Prodotti oggetto","N:N"],["Pagatore","Contatto o Organizzazione → propaga ai Pagamenti"],["Importo","dato contrattuale"],["saldo da incassare","comodità di lettura"],["Link contratto (Drive)",""]],
+    mech:{comune:"3 pipeline; rivista e stand-alone = transazioni dirette senza Deal.",a:"Deal↔Prodotti: Connect multi-valore + Acquisti come ponte de-facto. 'saldo' = Mirror sub condicione della verifica-perno. Materializzati coaching (sessioni erogate/totali).",b:"Deal↔Prodotti: linked record nativo (nessun ponte). 'saldo' e 'sessioni erogate' = rollup nativi."},
+    watch:["Multi-prodotto: N righe Acquisti sullo stesso Deal, con regola di quadratura (somma quote = importo)."],ref:"A §3.1 · B §2.2"},
+  webinar:{n:"Webinar / Eventi",cat:"catalogo",roles:[],desc:"Il calendario degli eventi promozionali (~11/anno, 100-250 iscritti).",
+    attrs:[["Codice","chiave del match con il gruppo MailerLite"],["Tipo","vendita / nutrimento"],["Prodotto promosso / CTA / stato",""],["Metriche post-evento","iscritti, partecipanti, no-show"]],
+    mech:{comune:"Il webinar nasce nel CRM PRIMA delle iscrizioni (è la chiave del match).",a:"Metriche = campi materializzati.",b:"Metriche = rollup nativi sulle Iscrizioni Webinar."},
+    watch:[],ref:"A §3.1 · B §2.2"},
+  acquisti:{n:"Acquisti / Transazioni",cat:"econ",roles:["Fatturato","Crocevia"],desc:"IL LIBRO MASTRO e la fonte del FATTURATO. Ogni riga = qualcosa che un contatto ha acquisito, a qualunque titolo (anche omaggi/magneti a importo 0).",
+    attrs:[["Importo / quota","= fatturato (SUM)"],["Tipo","acquisto / omaggio / abbonamento / rinnovo / storno"],["codice_tipo","chiave di routing"],["Prodotto / Edizione / Linea / Data",""],["Deal / Abbonamento di rif.","opzionali"]],
+    mech:{comune:"Crocevia: riceve da WooCommerce, Deal vinto, manuale, Abbonamenti; genera erogazione (Iscrizioni Corsi) e cassa (Pagamenti). Storno = riga negativa + stato terminale sulla riga originale.",a:"codice_tipo materializzato alla creazione. Routing all'erogazione MANUALE a regime (fan-out automatico = opzione di fase 2).",b:"'tipo prodotto' materializzato perché è il trigger del fan-out. Non è più il 'ponte de-facto' Deal-Prodotti."},
+    watch:["Doppio conteggio abbonamenti: la riga nasce da UNA sola fonte (dedup su ID ordine OPPURE manuale, mai entrambe)."],ref:"A §3.1 / §3.4 · B §2.2 / §2.5"},
+  pagamenti:{n:"Pagamenti / Rate",cat:"econ",roles:["Incassato","Segregata"],desc:"LO SCADENZARIO e la fonte dell'INCASSATO. Ogni riga = una singola rata, attesa o ricevuta.",
+    attrs:[["Importo","con segno (rimborsi negativi) = incassato"],["Acquisto di riferimento","1 acquisto → N rate"],["Scadenza / data pagamento",""],["Stato","da pagare / pagato / scaduto / sollecitato / rimborsato"]],
+    mech:{comune:"Fatturato ≠ incassato: un corso venduto (1 riga Acquisti) si incassa in 12 rate (12 righe qui). Un'automazione scrive il flag 'cliente in regola' sul Contatto: il fatto esce dal muro senza l'importo.",a:"SEGREGATA con MURO DI BOARD (nascosta a Laura) — l'unica forma robusta di riservatezza. Gerarchia: muro › Mirror ereditato › flag › restrizione colonna.",b:"Tabella NORMALE nella base unica; segregata dai PERMESSI DI CAMPO di Noloco. È così che B copre pienamente F2."},
+    watch:["'Rate scadute' = automazione a trigger temporale (nell'MVP). Match bonifici = spunta manuale (Virginia)."],ref:"A §3.1 · B §2.2 / §3.2"},
+  abbonamenti:{n:"Abbonamenti",cat:"econ",roles:["Solo stato","Fuori MVP"],desc:"Puro LAYER DI STATO: una riga 'viva' per abbonamento (CoachMag, Coach the Coach). Nessun suo campo entra nel fatturato.",
+    attrs:[["Tipo / periodicità / stato","attivo / scaduto / in rinnovo / cancellato"],["Date inizio / rinnovo",""],["Indirizzo spedizione","se cartaceo"]],
+    mech:{comune:"Ogni attivazione e ogni rinnovo generano una riga in ACQUISTI (il fatto economico). Il conteggio 'abbonati attivi' si legge da qui (stato), non contando le righe Acquisti.",a:"Riga di stato; promemoria pre-scadenza a Virginia.",b:"Tabella di stato; viste 'in scadenza' marcate fase 2."},
+    watch:[],ref:"A §3.1 · B §2.2"},
+  iscr_web:{n:"Iscrizioni Webinar",cat:"ponte",roles:["Ponte","Molto operativa"],desc:"Ponte Contatti × Webinar. La tabella più operativa: Vanessa e Laura la usano ogni giorno in campagna.",
+    attrs:[["Contatto / Webinar",""],["Assegnato a","Vanessa / Laura"],["Ha partecipato",""],["Esiti pre-call / recall",""],["Risposte form iscrizione",""]],
+    mech:{comune:"Sostituisce l'Excel che oggi gira via email.",a:"Board ponte (N:N non nativo). contatto_id scritto da Zapier.",b:"Junction con payload — resta anche in nativo perché porta dati propri."},
+    watch:["Presenze: match email da Zoom semi-automatico (A) / assente col funnel attuale → maschera di caricamento (B). Riconciliazione manuale residua."],ref:"A §3.2 · B §2.3"},
+  iscr_corsi:{n:"Iscrizioni Corsi",cat:"ponte",roles:["Erogazione"],desc:"IL LAYER DI EROGAZIONE (non il registro dell'acquisto): checklist, assessment, accesso e-learning. Solo per prodotti di tipo corso.",
+    attrs:[["Edizione / Contatto",""],["Acquisto di riferimento","1:1 per riga"],["Stato avanzamento",""],["Checklist pre-corso","Virginia, Francesco, Laura, Silvia"],["Post-corso","esame, attestato/certificazione"]],
+    mech:{comune:"Generata 1:1 dalla riga Acquisti di tipo corso; l'assegnazione dell'edizione resta umana. Routing MANUALE a regime (matrice come checklist + vista di quadratura).",a:"Assessment come SUBITEM della riga.",b:"Assessment nella tabella dedicata 'Assessment erogati'."},
+    watch:[],ref:"A §3.2 · B §2.3"},
+  affiliazioni:{n:"Affiliazioni",cat:"ponte",roles:["Ponte N:N"],desc:"Ponte Contatti × Organizzazioni (N:N). Una persona può appartenere a più aziende nel tempo.",
+    attrs:[["Persona / Organizzazione",""],["Ruolo","dipendente / titolare / referente / sponsor"],["Periodo","da/a, opzionale"]],
+    mech:{comune:"Minimale; esiste perché cambiare cardinalità a posteriori è costoso.",a:"Board ponte.",b:"Junction nativa."},
+    watch:[],ref:"A §3.2 · B §2.3"},
+  sessioni:{n:"Sessioni Coaching",cat:"operativa",roles:["Log"],desc:"Il log delle sessioni individuali (erogate o programmate).",
+    attrs:[["Data / coach / contatto",""],["Deal / pacchetto",""],["Tipo","coaching / mentoring / assessment"],["Numero sessione / stato",""]],
+    mech:{comune:"Un assessment nel coaching = riga di tipo 'assessment'. A 'svolta' incrementa 'sessioni erogate' del Deal. Automazione: sessione 8 → task rinnovo.",a:"Materializza il segnale che fa da trigger al rinnovo.",b:"'sessioni erogate' = rollup; materializza solo il trigger."},
+    watch:[],ref:"A §3.3 · B §2.4"},
+  interazioni:{n:"Interazioni",cat:"operativa",roles:["Timeline","Rischio #1"],desc:"Il log manuale delle comunicazioni significative. È il PERNO della timeline della scheda contatto.",
+    attrs:[["Data / tipo / direzione","chiamata, WhatsApp, email, vocale, di persona"],["Contatto","obbligatorio → porta la nota nella timeline"],["Deal collegato","opzionale (prassi per le note di trattativa)"]],
+    mech:{comune:"Email Aruba e WhatsApp NON integrabili → log manuale. Mitigazione: il log come sottoprodotto di un'azione già svolta (chiusura recall → crea Interazione).",a:"Board Interazioni.",b:"Include il click-CTA generato dal flusso MailerLite (DS-2)."},
+    watch:["L'adozione disciplinata di questa tabella è la CONDIZIONE DI VITA della priorità #1. È il rischio #1 del progetto."],ref:"A §3.3 · B §2.4"},
+  attivita:{n:"Attività / Task",cat:"operativa",roles:[],desc:"Le incombenze e i to-do assegnabili al team.",
+    attrs:[["Descrizione / assegnatario / deadline / stato",""],["Entità di riferimento","contatto, deal, iscrizione (N:1)"],["Priorità",""]],
+    mech:{comune:"Nascono a mano o dalle automazioni/workflow.",a:"Create da automazioni Monday (es. 'Confermato' → task al team).",b:"Create dai workflow Noloco — consumano workflow run (tetto 3.000/mese)."},
+    watch:[],ref:"A §3.3 · B §2.4"},
+  assessment:{n:"Assessment erogati",cat:"bonly",roles:["Solo B"],desc:"Registro degli assessment/certificazioni con date ed esiti, comune ai due canali (corso e coaching).",
+    attrs:[["Contatto",""],["Tipo","vocabolario dal catalogo Prodotti"],["Data / esito",""],["Contesto","Iscrizioni Corsi o Sessioni Coaching"]],
+    mech:{comune:"—",a:"NON esiste come tabella: gli assessment sono subitem di Iscrizioni Corsi + etichette su Contatti. Il filtro per data/scadenza resta rimandato.",b:"Tabella dedicata: risolve nativamente il filtro per data/scadenza (miglioria su F6). Alimenta le multi-select su Contatti."},
+    watch:[],ref:"A §3.1 (nota) · B §2.4"}
+};
+
+const REL=[
+  ["contatti","affiliazioni","1:N","appartiene a"],["organizzazioni","affiliazioni","1:N","raggruppa"],
+  ["prodotti","edizioni","1:N","ha edizioni"],["prodotti","prodotti","N:1","corso successivo"],
+  ["prodotti","webinar","1:N","promosso in"],["contatti","iscr_web","1:N","si iscrive"],
+  ["webinar","iscr_web","1:N","raccoglie"],["contatti","deal","1:N","genera"],
+  ["organizzazioni","deal","1:N","commissiona"],["deal","prodotti","N:N","oggetto offerta"],
+  ["contatti","acquisti","1:N","acquisisce"],["prodotti","acquisti","1:N","è acquistato"],
+  ["edizioni","acquisti","1:N","riferita in"],["deal","acquisti","1:N opz.","→ vinto"],
+  ["abbonamenti","acquisti","1:N","attivazione + rinnovi"],["acquisti","iscr_corsi","1:1","eroga se corso"],
+  ["edizioni","iscr_corsi","1:N","iscrive"],["contatti","iscr_corsi","1:N","frequenta"],
+  ["acquisti","pagamenti","1:N","rate"],["contatti","pagamenti","1:N","intestatario"],
+  ["contatti","abbonamenti","1:N","sottoscrive"],["contatti","sessioni","1:N","riceve"],
+  ["deal","sessioni","1:N","pacchetto"],["contatti","interazioni","1:N","timeline"],
+  ["deal","interazioni","1:N opz.","note datate"],["contatti","attivita","1:N","riferimento"],
+  ["deal","attivita","1:N","riferimento"],["iscr_corsi","attivita","1:N","riferimento"],
+  ["contatti","assessment","1:N","svolge"],["iscr_corsi","assessment","1:N","contesto"],
+  ["sessioni","assessment","1:N","contesto"]
+];
+
+const LAYERS=[["Core — entità fondamentali",["contatti","organizzazioni","prodotti","edizioni","deal","webinar","acquisti","pagamenti","abbonamenti"]],
+  ["Ponte — relazioni con dati propri",["iscr_web","iscr_corsi","affiliazioni"]],
+  ["Operative — processi e log",["sessioni","interazioni","attivita","assessment"]]];
+
+const CATVAR={hub:"--hub",econ:"--econ",catalogo:"--catalogo",ponte:"--ponte",operativa:"--operativa",bonly:"--bonly"};
+const board=document.getElementById("board");
+LAYERS.forEach(([title,ids])=>{
+  const g=document.createElement("section");g.className="layer-group";
+  g.innerHTML=`<div class="layer-head"><span>${title}</span><span>${ids.length}</span></div>`;
+  const grid=document.createElement("div");grid.className="grid";
+  ids.forEach(id=>{
+    const e=E[id];const b=document.createElement("button");
+    b.className="card";b.dataset.cat=e.cat;b.dataset.id=id;
+    const soloB=e.cat==="bonly"?`<span class="badge solo-b">Solo B</span>`:"";
+    b.innerHTML=`<span class="cname">${e.n} ${soloB}</span><span class="cdesc">${e.desc}</span>`;
+    b.addEventListener("click",()=>select(id));
+    grid.appendChild(b);
+  });
+  g.appendChild(grid);board.appendChild(g);
+});
+document.querySelectorAll("[data-go]").forEach(n=>n.addEventListener("click",()=>select(n.dataset.go)));
+
+const detail=document.getElementById("detail"),backdrop=document.getElementById("backdrop");
+let current=null;
+function neighbors(id){const s=new Set();REL.forEach(([f,t])=>{if(f===id)s.add(t);if(t===id)s.add(f);});return s;}
+function relLines(id){
+  return REL.filter(r=>r[0]===id||r[1]===id).map(([f,t,c,l])=>{
+    const other=f===id?t:f;const dir=f===id?"▶":"◀";
+    return `<div class="rel">${dir} <a data-go="${other}">${E[other].n}</a> <span class="card-badge">(${c})</span> — ${l}</div>`;
+  }).join("");
+}
+function select(id){
+  const e=E[id];current=id;
+  document.querySelectorAll(".card").forEach(c=>{c.classList.remove("active","related");});
+  const nb=neighbors(id);
+  document.querySelectorAll(".card").forEach(c=>{
+    if(c.dataset.id===id)c.classList.add("active");
+    else if(nb.has(c.dataset.id))c.classList.add("related");
+  });
+  document.body.classList.add("dim");
+  const roles=e.roles.map(r=>`<span class="badge">${r}</span>`).join("");
+  const attrs=e.attrs.map(([k,v])=>`<div class="attr"><b>${k}</b>${v?` <span>— ${v}</span>`:""}</div>`).join("");
+  const watch=e.watch.length?`<div class="block"><div class="bh">Punti di attenzione</div>${e.watch.map(w=>`<div class="watch">${w}</div>`).join("")}</div>`:"";
+  detail.style.setProperty("--dcat",`var(${CATVAR[e.cat]})`);
+  detail.innerHTML=`
+    <button class="close" id="dclose">Chiudi ✕</button>
+    <div class="dcat">${CAT_LABEL[e.cat]}</div>
+    <h3>${e.n}</h3>
+    <div class="droles">${roles}</div>
+    <div class="ddesc">${e.desc}</div>
+    <div class="block"><div class="bh">Cosa contiene</div>${attrs}</div>
+    <div class="block"><div class="bh">Relazioni</div>${relLines(id)}</div>
+    <div class="block"><div class="bh">Meccanismo</div>
+      <div class="mech c"><span class="ml">Comune A/B</span>${e.mech.comune}</div>
+      <div class="mech a"><span class="ml">Piano A · Monday</span>${e.mech.a}</div>
+      <div class="mech b"><span class="ml">Piano B · Airtable+Noloco</span>${e.mech.b}</div>
+    </div>
+    ${watch}
+    <div class="dref">Riferimento · ${e.ref}</div>`;
+  detail.querySelector("#dclose").addEventListener("click",close);
+  detail.querySelectorAll("[data-go]").forEach(a=>a.addEventListener("click",()=>select(a.dataset.go)));
+  applyLayerEmphasis();
+  detail.classList.add("open");backdrop.classList.add("on");
+}
+function close(){detail.classList.remove("open");backdrop.classList.remove("on");document.body.classList.remove("dim");document.querySelectorAll(".card").forEach(c=>c.classList.remove("active","related"));current=null;}
+backdrop.addEventListener("click",close);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")close();});
+
+let layer="comune";
+function applyLayerEmphasis(){
+  detail.querySelectorAll(".mech").forEach(m=>m.classList.remove("on"));
+  if(layer==="a")detail.querySelector(".mech.a")?.classList.add("on");
+  if(layer==="b")detail.querySelector(".mech.b")?.classList.add("on");
+  if(layer==="comune")detail.querySelector(".mech.c")?.classList.add("on");
+}
+document.querySelectorAll(".seg button").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    layer=btn.dataset.layer;
+    document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b===btn?"true":"false"));
+    document.body.classList.remove("layer-comune","layer-a","layer-b");
+    document.body.classList.add("layer-"+layer);
+    document.getElementById("layernote").textContent=LAYERNOTE[layer];
+    applyLayerEmphasis();
+  });
+});
+document.getElementById("layernote").textContent=LAYERNOTE.comune;
+
+const spot=document.getElementById("spotlight");
+spot.addEventListener("click",()=>{
+  const on=spot.dataset.on==="true";spot.dataset.on=String(!on);spot.setAttribute("aria-pressed",String(!on));
+  document.body.classList.toggle("spotlight",!on);
+});
+</script>
+</body>
+</html>
