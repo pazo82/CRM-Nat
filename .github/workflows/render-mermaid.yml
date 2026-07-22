@@ -6,6 +6,10 @@ on:
       - '**/*.mermaid'
   workflow_dispatch:
 
+concurrency:
+  group: render-mermaid-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -51,9 +55,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "Nessuna modifica agli SVG generati."
           else
-            git commit -m "Rigenera diagrammi SVG da .mermaid [skip ci]"
-            git push
-          fi
-            git commit -m "Rigenera diagrammi SVG da .mermaid [skip ci]"
-            git push
+            git commit -m "Rigenera diagrammi SVG da .mermaid [skip ci]" || echo "Niente da commitare (probabile run concorrente)."
+            git push || echo "Push non necessario o già aggiornato."
           fi
