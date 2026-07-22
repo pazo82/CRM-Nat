@@ -1,4 +1,4 @@
 [
-  { "title": "Nome documento HTML", "type": "html", "path": "nome-file.html" },
-  { "title": "Modello dati CRM (P1)", "type": "mermaid", "path": "P1_Modello_Dati_CRM.svg" }
+  { "title": "1. Modello dati CRM [HTML]", "type": "html", "path": "P1_Modello_Dati_CRM.html" },
+  { "title": "1. Modello dati CRM [Mermaid]", "type": "mermaid", "path": "P1_Modello_Dati_CRM.svg" }
 ]
