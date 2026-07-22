@@ -22,10 +22,25 @@ jobs:
           for f in $(find . -name '*.mermaid'); do
             svg="${f%.mermaid}.svg"
             echo "Rendering $f -> $svg"
-            curl -sf -X POST https://kroki.io/mermaid/svg \
-              -H "Content-Type: text/plain" \
-              --data-binary @"$f" \
-              -o "$svg"
+            attempt=1
+            max_attempts=3
+            http_code=0
+            while [ "$attempt" -le "$max_attempts" ]; do
+              http_code=$(curl -s -o "$svg" -w "%{http_code}" -X POST https://kroki.io/mermaid/svg \
+                -H "Content-Type: text/plain" \
+                --data-binary @"$f")
+              if [ "$http_code" -eq 200 ]; then
+                break
+              fi
+              echo "Tentativo $attempt/$max_attempts fallito (HTTP $http_code), riprovo in 15s..."
+              sleep 15
+              attempt=$((attempt + 1))
+            done
+            if [ "$http_code" -ne 200 ]; then
+              echo "::error::Kroki ha risposto con codice $http_code per $f dopo $max_attempts tentativi"
+              cat "$svg"
+              exit 1
+            fi
           done
 
       - name: Commit generated SVGs
