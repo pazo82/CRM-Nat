@@ -16,19 +16,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Render each .mermaid file via Kroki
+      - name: Render each .mermaid file via mermaid.ink
         run: |
           set -e
           for f in $(find . -name '*.mermaid'); do
             svg="${f%.mermaid}.svg"
             echo "Rendering $f -> $svg"
+            encoded=$(base64 -w 0 "$f" | tr '+/' '-_')
             attempt=1
             max_attempts=3
             http_code=0
             while [ "$attempt" -le "$max_attempts" ]; do
-              http_code=$(curl -s -o "$svg" -w "%{http_code}" -X POST https://kroki.io/mermaid/svg \
-                -H "Content-Type: text/plain" \
-                --data-binary @"$f")
+              http_code=$(curl -s -o "$svg" -w "%{http_code}" \
+                "https://mermaid.ink/svg/${encoded}")
               if [ "$http_code" -eq 200 ]; then
                 break
               fi
@@ -37,7 +37,7 @@ jobs:
               attempt=$((attempt + 1))
             done
             if [ "$http_code" -ne 200 ]; then
-              echo "::error::Kroki ha risposto con codice $http_code per $f dopo $max_attempts tentativi"
+              echo "::error::mermaid.ink ha risposto con codice $http_code per $f dopo $max_attempts tentativi"
               cat "$svg"
               exit 1
             fi
@@ -51,6 +51,9 @@ jobs:
           if git diff --staged --quiet; then
             echo "Nessuna modifica agli SVG generati."
           else
+            git commit -m "Rigenera diagrammi SVG da .mermaid [skip ci]"
+            git push
+          fi
             git commit -m "Rigenera diagrammi SVG da .mermaid [skip ci]"
             git push
           fi
