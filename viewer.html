@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Visualizzatore diagramma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #12141a;
@@ -13,6 +13,7 @@
     --muted: #8b8f9b;
     --line: #2a2e38;
     --accent: #5eead4;
+    --error: #e07a5f;
   }
   * { box-sizing: border-box; }
   body {
@@ -46,62 +47,47 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow-x: auto;
   }
+  .frame img { display: block; width: 100%; height: auto; }
   .status {
     color: var(--muted);
     font-family: "IBM Plex Mono", monospace;
     font-size: 0.9rem;
   }
-  /* Mermaid imposta un max-width inline sull'SVG in base alla dimensione
-     "naturale" del diagramma: qui lo sovrascriviamo per farlo riempire
-     il contenitore invece di restare piccolo con spazio bianco intorno. */
-  .frame svg {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    display: block;
-  }
-  .error { color: #f28b82; }
+  .status.error { color: var(--error); }
 </style>
 </head>
 <body>
 <main>
   <nav><a href="index.html">← Catalogo</a></nav>
   <h1 id="filename">—</h1>
-  <div class="frame">
-    <div class="mermaid status" id="diagram">Caricamento…</div>
+  <div class="frame" id="frame">
+    <p class="status" id="status">Caricamento…</p>
   </div>
 </main>
 
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: false });
-
+<script>
   const src = new URLSearchParams(window.location.search).get('src');
-  const el = document.getElementById('diagram');
+  const frame = document.getElementById('frame');
+  const status = document.getElementById('status');
   const filenameEl = document.getElementById('filename');
 
   if (!src) {
-    el.classList.add('error');
-    el.textContent = 'Parametro ?src= mancante nell\'URL.';
+    status.classList.add('error');
+    status.textContent = 'Parametro ?src= mancante nell\'URL.';
   } else {
     filenameEl.textContent = src;
-    fetch(src)
-      .then(res => {
-        if (!res.ok) throw new Error(`File non trovato (${res.status})`);
-        return res.text();
-      })
-      .then(text => {
-        el.classList.remove('status');
-        el.textContent = text;
-        return mermaid.run({ nodes: [el] });
-      })
-      .catch(err => {
-        el.classList.add('error');
-        el.classList.remove('status');
-        el.textContent = `Errore nel caricamento del diagramma: ${err.message}`;
-      });
+    const img = new Image();
+    img.alt = src;
+    img.onload = () => {
+      frame.innerHTML = '';
+      frame.appendChild(img);
+    };
+    img.onerror = () => {
+      status.classList.add('error');
+      status.textContent = `Immagine non trovata: ${src}`;
+    };
+    img.src = src;
   }
 </script>
 </body>
