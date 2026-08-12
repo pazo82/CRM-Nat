@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P2 · Topologia A⇄B · CRM NoLimits</title>
+<style>
+  :root{
+    --paper:#e9edf2; --panel:#f7f9fb; --ink:#17212e; --ink-soft:#4a5768;
+    --line:#c6cfda; --line-soft:#dbe2ea;
+    --bus:#b26a00; --core:#3550b4; --bi:#2b6a63; --manual:#b23a6b; --ext:#7a8798; --risk:#b23a6b;
+    --bus-fill:#fde3c0; --core-fill:#e5e9f8; --bi-fill:#e0efec; --manual-fill:#f7e3ec; --ext-fill:#eef1f5; --risk-fill:#fbe4e4;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);
+    background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+    background-size:26px 26px;line-height:1.5}
+  .wrap{max-width:1220px;margin:0 auto;padding:24px 18px 70px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:16px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft)}
+  h1{font-size:24px;margin:6px 0 4px;font-weight:800}
+  .sub{color:var(--ink-soft);font-size:13.5px;max-width:76ch}
+
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:16px 0 8px}
+  .seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden}
+  .seg button{font-family:var(--mono);font-size:12px;padding:8px 13px;background:var(--panel);border:0;border-right:1px solid var(--line);cursor:pointer;color:var(--ink);font-weight:600}
+  .seg button:last-child{border-right:0}
+  .seg button.on[data-plan="A"]{background:var(--core);color:#fff}
+  .seg button.on[data-plan="B"]{background:var(--bus);color:#fff}
+  .spot{font-family:var(--mono);font-size:11.5px;border:1.5px solid var(--line);background:var(--panel);border-radius:3px;padding:7px 11px;cursor:pointer;color:var(--ink)}
+  .spot.on{border-color:var(--ink);background:var(--ink);color:#fff}
+  .ctl-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin:6px 0 14px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .sw{width:12px;height:12px;border-radius:2px;border:1.5px solid}
+  .sw.bus{background:var(--bus-fill);border-color:var(--bus)} .sw.core{background:var(--core-fill);border-color:var(--core)}
+  .sw.bi{background:var(--bi-fill);border-color:var(--bi)} .sw.manual{background:var(--manual-fill);border-color:var(--manual)}
+  .sw.ext{background:var(--ext-fill);border-color:var(--ext)}
+
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:5px;background:var(--panel)}
+  .diagram{position:relative;min-width:980px;height:560px;padding:10px}
+  svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+  .lane{position:absolute;display:flex;flex-direction:column;gap:12px;justify-content:center}
+  #laneExt{left:16px;top:0;bottom:0;width:190px}
+  #laneBus{left:236px;top:0;bottom:0;width:180px;justify-content:center}
+  #laneCore{left:452px;top:0;bottom:0;width:300px;justify-content:center}
+  #laneBi{left:790px;top:20px;width:170px}
+  #laneManual{left:452px;bottom:14px;width:300px;flex-direction:row;gap:8px;justify-content:center}
+
+  .node{position:relative;z-index:2;border:1.5px solid var(--nc,var(--line));border-left-width:4px;background:#fff;border-radius:4px;
+    padding:8px 10px;cursor:pointer;font:inherit;text-align:left;transition:box-shadow .12s,opacity .15s,transform .1s}
+  .node:hover{box-shadow:0 4px 12px rgba(23,33,46,.14);transform:translateY(-1px)}
+  .node:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .node .nt{font-weight:700;font-size:12.5px}
+  .node .ns{font-size:10.5px;color:var(--ink-soft);margin-top:2px;font-family:var(--mono)}
+  .node .nf{font-size:10px;color:var(--bus);margin-top:4px;font-family:var(--mono);border-top:1px dotted var(--line);padding-top:3px}
+  .node[data-cat="ext"]{--nc:var(--ext)} .node[data-cat="bus"]{--nc:var(--bus);background:var(--bus-fill)}
+  .node[data-cat="core"]{--nc:var(--core);background:var(--core-fill)} .node[data-cat="bi"]{--nc:var(--bi);background:var(--bi-fill)}
+  .node[data-cat="manual"]{--nc:var(--manual);background:var(--manual-fill);border-style:dashed;flex:1}
+  .node.active{outline:2px solid var(--ink);outline-offset:1px}
+  .laneTag{position:absolute;top:-2px;left:0;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+  #laneManual .laneTag{top:-16px;left:50%;transform:translateX(-50%)}
+
+  .elabel{position:absolute;z-index:2;font-family:var(--mono);font-size:9.5px;background:rgba(255,255,255,.92);
+    border:1px solid var(--line-soft);border-radius:10px;padding:1px 6px;color:var(--ink-soft);transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none}
+  .elabel.mvp{border-color:#2b6a63;color:#1c5a52;background:#e7f3f0}
+
+  body.dim .node:not(.hl){opacity:.25} body.dim .elabel:not(.hl){opacity:.15}
+  body.dim path.wire:not(.hl){opacity:.12}
+
+  .riskstrip{margin-top:16px;border:1.5px solid var(--risk);border-left-width:5px;background:var(--risk-fill);border-radius:4px;padding:12px 14px}
+  .riskstrip .rl{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--risk);font-weight:700}
+  .riskstrip .rb{font-size:13px;margin-top:5px}
+  body.plan-A .riskstrip{--risk:#3550b4;border-color:#3550b4;background:#eaeefb}
+  body.plan-A .riskstrip .rl{color:#3550b4}
+
+  /* detail panel */
+  .backdrop{position:fixed;inset:0;background:rgba(23,33,46,.28);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
+  .backdrop.on{opacity:1;pointer-events:auto}
+  .detail{position:fixed;top:0;right:0;height:100vh;width:380px;max-width:92vw;background:#fff;border-left:2px solid var(--ink);
+    box-shadow:-8px 0 30px rgba(23,33,46,.14);transform:translateX(100%);transition:transform .22s;overflow-y:auto;z-index:40;padding:20px}
+  .detail.open{transform:translateX(0)}
+  .detail .close{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:12px;border:1.5px solid var(--line);background:var(--panel);border-radius:3px;padding:5px 9px;cursor:pointer}
+  .detail .dcat{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dc,var(--ink-soft))}
+  .detail h3{font-size:19px;margin:4px 0 6px;font-weight:800}
+  .detail .ddesc{font-size:13px;color:var(--ink-soft);margin-bottom:12px}
+  .block{margin:14px 0}
+  .block .bh{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--line-soft);padding-bottom:4px;margin-bottom:7px}
+  .rel{font-size:12px;font-family:var(--mono);margin:4px 0}
+  .ab{border:1px solid var(--line);border-radius:3px;padding:8px 10px;margin:6px 0;font-size:12.5px;background:var(--panel)}
+  .ab .ml{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);display:block;margin-bottom:2px}
+  .ab.A{border-left:3px solid var(--core)} .ab.B{border-left:3px solid var(--bus)}
+  .note{font-size:12px;margin:5px 0;padding-left:14px;position:relative;color:#7a4a00}
+  .note::before{content:"▲";position:absolute;left:0;font-size:8px;top:3px;color:var(--bus)}
+  .hint{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:12px;text-align:center}
+  @media (max-width:560px){.detail{width:100%;height:82vh;top:auto;bottom:0;transform:translateY(100%);border-left:0;border-top:2px solid var(--ink);border-radius:10px 10px 0 0}.detail.open{transform:translateY(0)}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body class="plan-A">
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CRM NoLimits · P2 — Topologia componenti e flussi</div>
+    <h1>Le stesse fonti, due forme di sistema</h1>
+    <p class="sub">Le due architetture sulla stessa tela. Cambia l'interruttore per vedere il <em>core</em> cambiare forma: in Monday dati e interfaccia sono un solo blocco; in Airtable+Noloco sono separati. Sorgenti esterne, bus e zona manuale restano; cambiano il bus, il percorso di Zoom e il profilo di rischio. Clicca un componente per il dettaglio.</p>
+  </header>
+
+  <div class="controls">
+    <span class="ctl-label">Piano</span>
+    <div class="seg" role="group" aria-label="Scegli il piano">
+      <button data-plan="A" class="on">Piano A · Monday</button>
+      <button data-plan="B">Piano B · Airtable+Noloco</button>
+    </div>
+    <span class="ctl-label" style="margin-left:8px">Faro</span>
+    <button class="spot" data-spot="bus">Bus</button>
+    <button class="spot" data-spot="manual">Zona manuale</button>
+    <button class="spot" data-spot="risk">Rischio di sistema</button>
+    <button class="spot" data-spot="mvp">Solo MVP acceso</button>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw ext"></i>sorgente esterna</span>
+    <span><i class="sw bus"></i>bus di integrazione</span>
+    <span><i class="sw core"></i>core (dati/interfaccia)</span>
+    <span><i class="sw bi"></i>business intelligence</span>
+    <span><i class="sw manual"></i>zona manuale</span>
+    <span>— flusso &nbsp; ┈ manuale</span>
+  </div>
+
+  <div class="scroll">
+    <div class="diagram" id="diagram">
+      <svg class="wires" id="wires">
+        <defs>
+          <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#3a4757"></path>
+          </marker>
+          <marker id="ahs" markerWidth="9" markerHeight="9" refX="2" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M9,0 L2,3 L9,6 Z" fill="#3a4757"></path>
+          </marker>
+        </defs>
+      </svg>
+      <div class="lane" id="laneExt"><span class="laneTag">Sorgenti esterne</span></div>
+      <div class="lane" id="laneBus"><span class="laneTag">Bus</span></div>
+      <div class="lane" id="laneCore"><span class="laneTag">Core</span></div>
+      <div class="lane" id="laneBi"><span class="laneTag">BI</span></div>
+      <div class="lane" id="laneManual"><span class="laneTag">Zona manuale (non integrabile)</span></div>
+    </div>
+  </div>
+
+  <div class="riskstrip" id="riskstrip"></div>
+  <p class="hint">Faro = isola una parte e attenua il resto. Clicca due volte lo stesso faro per spegnerlo.</p>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+<aside class="detail" id="detail" aria-live="polite"></aside>
+
+<script>
+"use strict";
+var plan = "A", spot = null, current = null;
+
+var NODES = {
+  fb:{lane:"laneExt",cat:"ext",t:"Facebook Lead Ads"},
+  ml:{lane:"laneExt",cat:"ext",t:"MailerLite",s:"email marketing"},
+  wc:{lane:"laneExt",cat:"ext",t:"WooCommerce",s:"e-commerce"},
+  zo:{lane:"laneExt",cat:"ext",t:"Zoom Meeting"},
+  pp:{lane:"laneExt",cat:"ext",t:"PayPal"},
+  st:{lane:"laneExt",cat:"ext",t:"Stripe"},
+  ld:{lane:"laneExt",cat:"ext",t:"LearnDash",s:"e-learning"},
+  gd:{lane:"laneExt",cat:"ext",t:"Google Drive",s:"contratti"},
+  bus:{lane:"laneBus",cat:"bus",t:"ZAPIER",tB:"MAKE / ZAPIER",s:"bus di integrazione",f:"dedup email · materializza contatto_id",fB:"dedup email · email via lookup"},
+  mon:{lane:"laneCore",cat:"core",t:"MONDAY CRM",s:"DB + interfaccia · source of truth",f:"▹ Salute del sistema (Principio 6)",plan:"A"},
+  atb:{lane:"laneCore",cat:"core",t:"AIRTABLE",s:"DB relazionale · N:N · rollup/lookup",f:"tetti: 50k record · 25k automazioni/mese",plan:"B"},
+  nol:{lane:"laneCore",cat:"core",t:"NOLOCO",s:"frontend · permessi di CAMPO (F2) · mobile",f:"tetti: 25k sync · 3k workflow/mese",plan:"B"},
+  ga:{lane:"laneBi",cat:"bi",t:"Google Analytics"},
+  lk:{lane:"laneBi",cat:"bi",t:"Looker Studio",s:"legge, non scrive"},
+  ar:{lane:"laneManual",cat:"manual",t:"Email Aruba"},
+  wa:{lane:"laneManual",cat:"manual",t:"WhatsApp"},
+  ft:{lane:"laneManual",cat:"manual",t:"Fatturazione Aruba"}
+};
+// core ordering per plan (top→bottom)
+var CORE = {A:["mon"], B:["atb","nol"]};
+
+// DB = destinatario del bus / sorgente BI ; FRONT = dove lavora il team (manuale)
+function DB(){ return plan==="A" ? "mon" : "atb"; }
+function FRONT(){ return plan==="A" ? "mon" : "nol"; }
+
+var EDGES = [
+  {f:"fb",t:"ml",l:"lead · cascata",p:"AB"},
+  {f:"ml",t:"bus",l:"iscrizioni webinar + CTA",p:"AB",bi:1,mvp:1},
+  {f:"wc",t:"bus",l:"ordini → Acquisti",p:"AB"},
+  {f:"pp",t:"bus",l:"pagamenti",p:"AB"},
+  {f:"st",t:"bus",l:"pagamenti",p:"AB"},
+  {f:"ld",t:"bus",l:"completamenti · fase 2",p:"AB"},
+  {f:"zo",t:"bus",l:"presenze · match email",p:"A"},
+  {f:"zo",t:"FRONT",l:"presenze · maschera",p:"B",man:1},
+  {f:"bus",t:"DB",l:"crea/aggiorna",p:"AB",bi:1,mvp:1},
+  {f:"DB",t:"lk",l:"sola lettura",p:"AB"},
+  {f:"ml",t:"lk",l:"connettore a pagamento",p:"AB"},
+  {f:"ga",t:"lk",l:"",p:"AB"},
+  {f:"gd",t:"FRONT",l:"link contratto",p:"AB",man:1},
+  {f:"ar",t:"FRONT",l:"log manuale",p:"AB",man:1},
+  {f:"wa",t:"FRONT",l:"",p:"AB",man:1},
+  {f:"ft",t:"FRONT",l:"riferimento",p:"AB",man:1},
+  {f:"nol",t:"atb",l:"live-sync API",p:"B",sync:1,mvp:1}
+];
+
+var RISK = {
+  A:{l:"Rischio di sistema · Piano A",b:"Un <b>bus unico</b> (Zapier) è il collo di bottiglia: poche parti mobili, ma tutto passa da un punto. Il rischio è il <b>fallimento silenzioso</b>, sorvegliato dalla dashboard <b>“salute del sistema”</b> (Principio 6)."},
+  B:{l:"Rischio di sistema · Piano B",b:"Distribuito su <b>4 tetti dimensionali</b> (Noloco 25k sync + 3k workflow/mese; Airtable 50k record + 25k automazioni/mese), <b>nessun ambiente di staging</b>, dipendenza dal <b>fornitore Noloco</b> (mitigata: frontend sostituibile) e <b>region UE non a budget</b> (GDPR via DPA/SCC)."}
+};
+
+var DETAIL = {
+  fb:{cat:"ext",desc:"Lead pubblicitari. Entrano nel CRM passando prima da MailerLite (cascata), con deduplica per email. Spento all'MVP.",notes:[]},
+  ml:{cat:"ext",desc:"Email marketing: newsletter, automazioni post-webinar, nurturing. È la sorgente delle iscrizioni webinar e del segnale click-CTA: l'unica integrazione ACCESA all'MVP e la più critica.",ab:{A:"Aggancio al webinar via codice del gruppo; il bus materializza contatto_id.",B:"Match via lookup del codice; l'email arriva via lookup nativo."}},
+  wc:{cat:"ext",desc:"E-commerce (mini-corsi, abbonamenti, stand-alone). Ogni ordine → una riga in Acquisti. Spento all'MVP (compilazione manuale). Dedup su ID ordine.",notes:[]},
+  zo:{cat:"ext",desc:"Presenze a webinar e lezioni.",ab:{A:"Match per email via Zapier (semi-automatico); residuo manuale.",B:"Non passa dal bus: maschera di caricamento in Noloco (Vanessa carica l'Excel di Francesco)."}},
+  pp:{cat:"ext",desc:"Incassi PayPal → core. Spento all'MVP.",notes:[]},
+  st:{cat:"ext",desc:"Incassi Stripe → core. Spento all'MVP.",notes:[]},
+  ld:{cat:"ext",desc:"E-learning (LearnDash): iscrizioni/completamenti corso, quiz. Attivazione in fase 2.",notes:[]},
+  gd:{cat:"ext",desc:"I contratti restano su Google Drive; il CRM ne tiene solo il link (campo URL, inserito a mano da Virginia). Copre il document management a costo nullo.",notes:[]},
+  bus:{cat:"bus",desc:"Bus di integrazione: trasferisce dati quando accade un evento. Non è solo trasporto — ha due responsabilità trasversali: deduplica dei contatti per email e aggancio della riga al contatto.",ab:{A:"Zapier. Materializza contatto_id (Item ID) sui satelliti. Rischio: fallimenti silenziosi (sorvegliati dalla salute del sistema).",B:"Make/Zapier. L'email arriva via lookup nativo, non materializzata (l'inverso di Monday)."},notes:["All'MVP è attivo solo il flusso MailerLite → CRM."]},
+  mon:{cat:"core",desc:"Un'unica piattaforma che fa da database e da interfaccia: è la source of truth operativa. La riservatezza dei Pagamenti si ottiene con il muro di board.",notes:["Rischio di sistema concentrato sul bus unico; dashboard 'salute del sistema' come sentinella."]},
+  atb:{cat:"core",desc:"Database relazionale in un'unica base: linked record N:N, rollup e lookup nativi. Riceve dal bus e alimenta la BI. Il team non vi accede direttamente.",notes:["Tetti: 50.000 record/base, 25.000 automazioni/mese."]},
+  nol:{cat:"core",desc:"Il frontend dove lavora il team: viste per ruolo, permessi fino al livello di campo (copre F2), azioni/workflow, app mobile. Legge/scrive Airtable via API. È sostituibile (fallback Airtable Interfaces senza migrazione dati).",notes:["Tetti: 25.000 righe sync/app, 3.000 workflow/mese.","Il team logga qui anche le comunicazioni manuali."]},
+  ga:{cat:"bi",desc:"Traffico e conversioni del sito → Looker.",notes:[]},
+  lk:{cat:"bi",desc:"Business intelligence: funnel, customer journey, trend, confronti tra linee. Legge dal core e dalle fonti; non scrive mai. Fuori dal perimetro MVP.",notes:[]},
+  ar:{cat:"manual",desc:"Email Aruba: non integrabile (il CRM parla solo con Gmail/Outlook). Le comunicazioni si registrano a mano nelle Interazioni. Impatto dichiarato su F1/F4.",notes:[]},
+  wa:{cat:"manual",desc:"WhatsApp: nessun connettore. Log manuale nelle Interazioni.",notes:[]},
+  ft:{cat:"manual",desc:"Fatturazione Aruba: la fattura si emette in Aruba; il CRM ne tiene solo il riferimento.",notes:[]}
+};
+
+var CATLABEL={ext:"Sorgente esterna",bus:"Bus di integrazione",core:"Core — dati/interfaccia",bi:"Business intelligence",manual:"Zona manuale"};
+var CATVAR={ext:"--ext",bus:"--bus",core:"--core",bi:"--bi",manual:"--manual"};
+
+var diagram=document.getElementById("diagram");
+var wires=document.getElementById("wires");
+var lanes={laneExt:document.getElementById("laneExt"),laneBus:document.getElementById("laneBus"),
+  laneCore:document.getElementById("laneCore"),laneBi:document.getElementById("laneBi"),laneManual:document.getElementById("laneManual")};
+
+function nodeVisible(id){var n=NODES[id];return !n.plan || n.plan===plan;}
+function edgeActive(e){
+  if(e.p!=="AB" && e.p!==plan) return false;
+  return true;
+}
+function resolve(x){ return x==="DB"?DB():(x==="FRONT"?FRONT():x); }
+
+function buildNodes(){
+  // clear existing node buttons (keep laneTag)
+  Object.keys(lanes).forEach(function(k){
+    var lane=lanes[k];
+    Array.prototype.slice.call(lane.querySelectorAll(".node")).forEach(function(n){n.remove();});
+  });
+  // ext, bi, manual: fixed; core: per plan
+  var order={laneExt:["fb","ml","wc","zo","pp","st","ld","gd"],laneBus:["bus"],
+    laneCore:CORE[plan],laneBi:["ga","lk"],laneManual:["ar","wa","ft"]};
+  Object.keys(order).forEach(function(laneId){
+    order[laneId].forEach(function(id){
+      var n=NODES[id];
+      var b=document.createElement("button");
+      b.className="node";b.dataset.cat=n.cat;b.dataset.id=id;
+      var title=(plan==="B"&&n.tB)?n.tB:n.t;
+      var foot=(plan==="B"&&n.fB)?n.fB:n.f;
+      var html='<div class="nt">'+title+'</div>';
+      if(n.s) html+='<div class="ns">'+n.s+'</div>';
+      if(foot) html+='<div class="nf">'+foot+'</div>';
+      b.innerHTML=html;
+      b.addEventListener("click",function(){select(id);});
+      lanes[laneId].appendChild(b);
+    });
+  });
+}
+
+function nodeEl(id){ return diagram.querySelector('.node[data-id="'+id+'"]'); }
+
+function sideAnchor(rect,cont,side,frac){
+  var x0=rect.left-cont.left, y0=rect.top-cont.top;
+  if(side==="left") return {x:x0,y:y0+rect.height*frac};
+  if(side==="right") return {x:x0+rect.width,y:y0+rect.height*frac};
+  if(side==="top") return {x:x0+rect.width*frac,y:y0};
+  return {x:x0+rect.width*frac,y:y0+rect.height};
+}
+
+function drawWires(){
+  // clear
+  Array.prototype.slice.call(wires.querySelectorAll("path.wire")).forEach(function(p){p.remove();});
+  Array.prototype.slice.call(diagram.querySelectorAll(".elabel")).forEach(function(l){l.remove();});
+  var cont=diagram.getBoundingClientRect();
+  wires.setAttribute("width",diagram.scrollWidth);
+  wires.setAttribute("height",diagram.scrollHeight);
+
+  var active=EDGES.filter(edgeActive).map(function(e){
+    var fid=resolve(e.f), tid=resolve(e.t);
+    return {e:e,fid:fid,tid:tid};
+  }).filter(function(o){return nodeEl(o.fid)&&nodeEl(o.tid)&&o.fid!==o.tid;});
+
+  // decide sides
+  active.forEach(function(o){
+    var fr=nodeEl(o.fid).getBoundingClientRect(), tr=nodeEl(o.tid).getBoundingClientRect();
+    var fcx=fr.left+fr.width/2, fcy=fr.top+fr.height/2, tcx=tr.left+tr.width/2, tcy=tr.top+tr.height/2;
+    var dx=tcx-fcx, dy=tcy-fcy;
+    if(Math.abs(dx)>=Math.abs(dy)){ o.fs=dx>0?"right":"left"; o.ts=dx>0?"left":"right"; o.axis="h"; }
+    else { o.fs=dy>0?"bottom":"top"; o.ts=dy>0?"top":"bottom"; o.axis="v"; }
+    o.fr=fr;o.tr=tr;o.other={f:{x:fcx,y:fcy},t:{x:tcx,y:tcy}};
+  });
+
+  // distribute fan-ins/outs sharing a node+side
+  function distribute(key,endpoint){
+    var groups={};
+    active.forEach(function(o){
+      var id=endpoint==="t"?o.tid:o.fid, side=endpoint==="t"?o.ts:o.fs;
+      var gk=id+"|"+side;
+      (groups[gk]=groups[gk]||[]).push(o);
+    });
+    Object.keys(groups).forEach(function(gk){
+      var arr=groups[gk], side=gk.split("|")[1];
+      var horiz=(side==="left"||side==="right");
+      arr.sort(function(a,b){
+        var oa=endpoint==="t"?a.other.f:a.other.t, ob=endpoint==="t"?b.other.f:b.other.t;
+        return horiz?(oa.y-ob.y):(oa.x-ob.x);
+      });
+      arr.forEach(function(o,i){
+        var frac=(i+1)/(arr.length+1);
+        if(endpoint==="t") o.tfrac=frac; else o.ffrac=frac;
+      });
+    });
+  }
+  distribute("t","t"); distribute("f","f");
+
+  var cont2=diagram.getBoundingClientRect();
+  active.forEach(function(o){
+    var a=sideAnchor(o.fr,cont2,o.fs,o.ffrac||0.5);
+    var b=sideAnchor(o.tr,cont2,o.ts,o.tfrac||0.5);
+    var d;
+    if(o.axis==="h"){var k=Math.min(90,Math.abs(b.x-a.x)/2+18);d="M"+a.x+","+a.y+" C"+(a.x+(o.fs==="right"?k:-k))+","+a.y+" "+(b.x+(o.ts==="left"?-k:k))+","+b.y+" "+b.x+","+b.y;}
+    else {var k2=Math.min(70,Math.abs(b.y-a.y)/2+14);d="M"+a.x+","+a.y+" C"+a.x+","+(a.y+(o.fs==="bottom"?k2:-k2))+" "+b.x+","+(b.y+(o.ts==="top"?-k2:k2))+" "+b.x+","+b.y;}
+    var path=document.createElementNS("http://www.w3.org/2000/svg","path");
+    path.setAttribute("d",d);path.setAttribute("class","wire");path.setAttribute("fill","none");
+    var col=o.e.man?"#b23a6b":(o.e.sync?"#3550b4":"#3a4757");
+    path.setAttribute("stroke",col);
+    path.setAttribute("stroke-width","1.6");
+    if(o.e.man||o.e.sync) path.setAttribute("stroke-dasharray","5 3");
+    path.setAttribute("marker-end","url(#ah)");
+    if(o.e.bi) path.setAttribute("marker-start","url(#ahs)");
+    path.dataset.f=o.fid;path.dataset.t=o.tid;path.dataset.kind=o.e.man?"manual":(o.e.sync?"sync":"flow");path.dataset.mvp=o.e.mvp?"1":"";
+    wires.appendChild(path);
+    // label
+    if(o.e.l){
+      var t=0.5, mt=1-t;
+      var lx=mt*mt*mt*a.x+3*mt*mt*t*((o.axis==="h")?(a.x+(o.fs==="right"?40:-40)):a.x)+3*mt*t*t*((o.axis==="h")?(b.x+(o.ts==="left"?-40:40)):b.x)+t*t*t*b.x;
+      var ly=(a.y+b.y)/2;
+      var lab=document.createElement("div");lab.className="elabel"+(o.e.mvp?" mvp":"");
+      lab.textContent=o.e.l;lab.style.left=((a.x+b.x)/2)+"px";lab.style.top=ly+"px";
+      lab.dataset.f=o.fid;lab.dataset.t=o.tid;lab.dataset.mvp=o.e.mvp?"1":"";
+      diagram.appendChild(lab);
+    }
+  });
+  applySpot();
+}
+
+function renderRisk(){
+  var r=RISK[plan];
+  document.getElementById("riskstrip").innerHTML='<div class="rl">'+r.l+'</div><div class="rb">'+r.b+'</div>';
+}
+
+function setPlan(p){
+  plan=p;
+  document.body.classList.remove("plan-A","plan-B");document.body.classList.add("plan-"+p);
+  Array.prototype.slice.call(document.querySelectorAll(".seg button")).forEach(function(b){b.classList.toggle("on",b.dataset.plan===p);});
+  buildNodes();renderRisk();
+  requestAnimationFrame(drawWires);
+  if(current && !nodeVisible(current)) closeDetail();
+}
+
+/* spotlight */
+function applySpot(){
+  var nodes=Array.prototype.slice.call(diagram.querySelectorAll(".node"));
+  var labels=Array.prototype.slice.call(diagram.querySelectorAll(".elabel"));
+  var paths=Array.prototype.slice.call(wires.querySelectorAll("path.wire"));
+  nodes.forEach(function(n){n.classList.remove("hl");});
+  labels.forEach(function(l){l.classList.remove("hl");});
+  paths.forEach(function(p){p.classList.remove("hl");});
+  if(!spot){document.body.classList.remove("dim");return;}
+  document.body.classList.add("dim");
+  function hlNode(id){var e=nodeEl(id);if(e)e.classList.add("hl");}
+  if(spot==="bus"){ hlNode("bus"); paths.forEach(function(p){if(p.dataset.f==="bus"||p.dataset.t==="bus"){p.classList.add("hl");hlNode(p.dataset.f);hlNode(p.dataset.t);}});
+    labels.forEach(function(l){if(l.dataset.f==="bus"||l.dataset.t==="bus")l.classList.add("hl");}); }
+  else if(spot==="manual"){ ["ar","wa","ft"].forEach(hlNode); hlNode(FRONT());
+    paths.forEach(function(p){if(p.dataset.kind==="manual"){p.classList.add("hl");}});
+    labels.forEach(function(l){var f=l.dataset.f;if(f==="ar"||f==="wa"||f==="ft"||f==="gd"||f==="zo")l.classList.add("hl");}); }
+  else if(spot==="risk"){ document.body.classList.remove("dim");
+    if(plan==="A"){hlNode("mon");} else {hlNode("atb");hlNode("nol");}
+    document.body.classList.add("dim");
+    if(plan==="B"){var s=null;paths.forEach(function(p){if(p.dataset.kind==="sync"){p.classList.add("hl");}});} }
+  else if(spot==="mvp"){ paths.forEach(function(p){if(p.dataset.mvp==="1"){p.classList.add("hl");hlNode(p.dataset.f);hlNode(p.dataset.t);}});
+    labels.forEach(function(l){if(l.dataset.mvp==="1")l.classList.add("hl");}); }
+}
+
+Array.prototype.slice.call(document.querySelectorAll(".spot")).forEach(function(btn){
+  btn.addEventListener("click",function(){
+    var s=btn.dataset.spot;
+    if(spot===s){spot=null;btn.classList.remove("on");}
+    else{spot=s;Array.prototype.slice.call(document.querySelectorAll(".spot")).forEach(function(b){b.classList.toggle("on",b===btn);});}
+    applySpot();
+  });
+});
+Array.prototype.slice.call(document.querySelectorAll(".seg button")).forEach(function(b){
+  b.addEventListener("click",function(){setPlan(b.dataset.plan);});
+});
+
+/* detail */
+var detail=document.getElementById("detail"),backdrop=document.getElementById("backdrop");
+function edgesForNode(id){
+  var out=[];
+  EDGES.filter(edgeActive).forEach(function(e){
+    var fid=resolve(e.f),tid=resolve(e.t);
+    if(fid===id&&tid!==id) out.push({dir:e.bi?"↔":"▶",other:tid,l:e.l});
+    else if(tid===id&&fid!==id) out.push({dir:e.bi?"↔":"◀",other:fid,l:e.l});
+  });
+  return out;
+}
+function select(id){
+  if(!nodeVisible(id))return;
+  current=id;
+  Array.prototype.slice.call(diagram.querySelectorAll(".node")).forEach(function(n){n.classList.toggle("active",n.dataset.id===id);});
+  var d=DETAIL[id],n=NODES[id];
+  var title=(plan==="B"&&n.tB)?n.tB:n.t;
+  var rels=edgesForNode(id).map(function(r){
+    var on=NODES[r.other]?((plan==="B"&&NODES[r.other].tB)?NODES[r.other].tB:NODES[r.other].t):r.other;
+    return '<div class="rel">'+r.dir+' '+on+(r.l?' — '+r.l:'')+'</div>';
+  }).join("")||'<div class="rel" style="color:#8a94a2">nessun collegamento nel piano attivo</div>';
+  var ab="";
+  if(d.ab){ab='<div class="block"><div class="bh">Meccanismo · A vs B</div>'+
+    '<div class="ab A"><span class="ml">Piano A · Monday</span>'+d.ab.A+'</div>'+
+    '<div class="ab B"><span class="ml">Piano B · Airtable+Noloco</span>'+d.ab.B+'</div></div>';}
+  var notes=(d.notes&&d.notes.length)?'<div class="block"><div class="bh">Note</div>'+d.notes.map(function(x){return '<div class="note">'+x+'</div>';}).join("")+'</div>':"";
+  detail.style.setProperty("--dc","var("+CATVAR[d.cat]+")");
+  detail.innerHTML='<button class="close" id="dclose">Chiudi ✕</button>'+
+    '<div class="dcat">'+CATLABEL[d.cat]+'</div><h3>'+title+'</h3>'+
+    '<div class="ddesc">'+d.desc+'</div>'+
+    '<div class="block"><div class="bh">Collegamenti (piano '+plan+')</div>'+rels+'</div>'+
+    ab+notes;
+  detail.querySelector("#dclose").addEventListener("click",closeDetail);
+  detail.classList.add("open");backdrop.classList.add("on");
+}
+function closeDetail(){detail.classList.remove("open");backdrop.classList.remove("on");current=null;
+  Array.prototype.slice.call(diagram.querySelectorAll(".node")).forEach(function(n){n.classList.remove("active");});}
+backdrop.addEventListener("click",closeDetail);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeDetail();});
+
+/* init */
+var rt;
+window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(drawWires,120);});
+setPlan("A");
+window.addEventListener("load",function(){requestAnimationFrame(drawWires);setTimeout(drawWires,250);});
+</script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P3 · Confronto A vs B · CRM NoLimits</title>
+<style>
+  :root{
+    --paper:#e9edf2; --panel:#f7f9fb; --ink:#17212e; --ink-soft:#4a5768; --ink-faint:#7b8797;
+    --line:#c6cfda; --line-soft:#dbe2ea;
+    --a:#3550b4; --a-fill:#eaeefb; --b:#b23a6b; --b-fill:#fbeaf1;
+    --pari:#4a6172; --pari-fill:#eef1f4; --dip:#b26a00; --dip-fill:#fdf0dc;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:Charter,"Iowan Old Style",Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);
+    background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+    background-size:26px 26px;line-height:1.55}
+  .wrap{max-width:1240px;margin:0 auto;padding:24px 16px 70px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:13px;margin-bottom:14px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft)}
+  h1{font-family:var(--serif);font-size:27px;margin:6px 0 4px;font-weight:700}
+  .sub{color:var(--ink-soft);font-size:13.5px;max-width:84ch}
+  .caveat{font-size:12.5px;color:var(--ink-faint);margin-top:9px;border-left:3px solid var(--line);padding-left:11px;max-width:84ch}
+
+  .tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:17px 0 4px}
+  .tl{border:1px solid var(--line);background:#fff;border-radius:4px;padding:11px 13px;border-top:3px solid var(--c)}
+  .tl .n{font-family:var(--serif);font-size:26px;font-weight:700;line-height:1.1;color:var(--c)}
+  .tl .l{font-size:12px;color:var(--ink-soft);margin-top:3px}
+  .tl .x{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:4px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0 12px}
+  .ctl-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+  .fl{font-family:var(--mono);font-size:11px;border:1.5px solid var(--line);background:var(--panel);
+    border-radius:3px;padding:6px 10px;cursor:pointer;color:var(--ink)}
+  .fl.on{border-color:var(--ink);background:var(--ink);color:#fff}
+
+  .axis{border:1px solid var(--line);background:#fff;border-radius:5px;margin:12px 0;overflow:hidden}
+  .ah{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:11px 15px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .ah .an{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);letter-spacing:.1em}
+  .ah h2{font-size:15.5px;margin:0;font-weight:700;flex:1;min-width:210px}
+  .peso{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);
+    display:inline-flex;align-items:center;gap:5px}
+  .peso i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--line);border:1px solid var(--ink-faint)}
+  .peso.alto i:nth-child(-n+3),.peso.medio i:nth-child(-n+2),.peso.basso i:nth-child(1){background:var(--ink);border-color:var(--ink)}
+  .vd{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;border:1.5px solid;border-radius:3px;padding:3px 10px;white-space:nowrap}
+  .vd.A{border-color:var(--a);color:var(--a);background:var(--a-fill)}
+  .vd.B{border-color:var(--b);color:var(--b);background:var(--b-fill)}
+  .vd.pari{border-color:var(--pari);color:var(--pari);background:var(--pari-fill)}
+  .vd.dip{border-color:var(--dip);color:#7a4a00;background:var(--dip-fill)}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .cell{padding:13px 15px;font-size:13px}
+  .cell.a{border-right:1px solid var(--line-soft);background:linear-gradient(90deg,var(--a-fill) 0 3px,#fff 3px)}
+  .cell.b{background:linear-gradient(90deg,var(--b-fill) 0 3px,#fff 3px)}
+  .cell .cl{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px;font-weight:700}
+  .cell.a .cl{color:var(--a)} .cell.b .cl{color:var(--b)}
+  .cell p{margin:0;color:var(--ink-soft)}
+  .cell p b{color:var(--ink)}
+
+  .verd{padding:12px 15px;border-top:1px solid var(--line-soft);background:#fcfdfe;font-size:13.5px}
+  .verd .vl{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px}
+  .verd .vt b{color:var(--ink)}
+  .verd .price{margin-top:7px;font-size:12.5px;color:#7a4a00;border-top:1px dotted var(--line);padding-top:7px}
+  .verd .price b{color:#5c3600}
+
+  .closing{margin-top:24px;border:1.5px solid var(--ink);background:#fff;border-radius:5px;padding:18px 20px}
+  .closing h3{font-family:var(--serif);font-size:19px;margin:0 0 9px}
+  .closing p{font-size:13.5px;color:var(--ink-soft);margin:0 0 10px}
+  .closing p:last-child{margin-bottom:0}
+  .closing b{color:var(--ink)}
+  .closing .q{border-left:4px solid var(--dip);background:var(--dip-fill);padding:12px 15px;border-radius:0 3px 3px 0;
+    margin:14px 0 0;font-size:14px;color:#5c3600}
+  .hint{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:16px;text-align:center}
+  @media (max-width:760px){.cols{grid-template-columns:1fr}.cell.a{border-right:0;border-bottom:1px solid var(--line-soft)}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CRM NoLimits · P3 — Confronto sugli assi decisionali</div>
+    <h1>Quindici assi, e una sola domanda</h1>
+    <p class="sub">Il confronto fra i due piani sugli assi in cui divergono davvero. Per ciascuno: cosa fa A, cosa fa B, e il <strong>verdetto con il suo prezzo</strong> — perché su quasi nessun asse si vince gratis. Il peso indica quanto quell'asse pesa nella decisione, non quanto è interessante.</p>
+    <p class="caveat">I verdetti sono una lettura, non un dato: derivano dal confronto fra i due Documenti di Architettura, scritti dallo stesso progetto e quindi con assunzioni condivise. Il commento esteso — i motivi ricorrenti, ciò che il confronto <em>non</em> risolve, e su cosa poggia davvero la scelta — è nel memo separato.</p>
+  </header>
+
+  <div class="tally" id="tally"></div>
+
+  <div class="controls">
+    <span class="ctl-label">Filtra</span>
+    <button class="fl" data-f="alto">Solo assi ad alto peso</button>
+    <button class="fl" data-f="div">Solo dove c'è un vincitore</button>
+  </div>
+
+  <div id="board"></div>
+
+  <section class="closing">
+    <h3>Come si legge il tabellone</h3>
+    <p><b>Non si decide contando i verdetti.</b> Cinque assi a B e quattro ad A non fanno «vince B»: gli assi hanno pesi diversi, e soprattutto <b>vincono in categorie diverse</b>. Tutti gli assi in cui B prevale sono strutturali — permessi, valori derivati, relazioni, separabilità. Tutti quelli in cui prevale A sono di contesto — fornitore, conformità, adozione. Non è un caso: Airtable è un database relazionale, Monday è uno strumento di lavoro. Ognuno vince il proprio mestiere.</p>
+    <p><b>Due assi non discriminano affatto</b>, ed è utile saperlo: i <b>costi</b> (entrambi nella fascia bassa delle migliaia di euro l'anno) e i <b>tetti dimensionali</b> (ai volumi NoLimits — undici webinar l'anno, 100-250 iscritti — nessuno dei due si avvicina ai limiti). Chi cercasse lì la risposta non la troverà.</p>
+    <p><b>E un rischio non è nemmeno sul tabellone</b>, perché è identico nei due piani: il log delle Interazioni e la concentrazione del carico su una sola persona. Nessuna delle due architetture lo tocca.</p>
+    <div class="q">Alla fine, tutti e quindici gli assi collassano su una domanda che non è tecnica: <b>quanto deve essere granulare la riservatezza dei dati economici?</b> Se basta nascondere un intero contenitore, A vince quasi tutto il resto. Se serve nascondere singoli campi mantenendo visibile il resto, B è l'unico che lo fa — e tutte le sue conseguenze vanno accettate in blocco. È una domanda per Natascia e Virginia, non per l'architettura.</div>
+  </section>
+  <p class="hint">Il commento esteso è nel memo P3 · questa pagina è il tabellone</p>
+</div>
+
+<script>
+"use strict";
+var AXES = [
+ {n:"F2 · Permessi per ruolo", peso:"alto", v:"B",
+  a:"<b>Muro di board.</b> L'unica forma robusta di riservatezza in Monday è nascondere un'intera board. Funziona, ma è tutto-o-niente: Laura non vede Pagamenti affatto. Il flag «cliente in regola» fa passare il fatto senza l'importo. Copertura dichiarata: <b>parziale</b>.",
+  b:"<b>Permessi di campo.</b> Pagamenti resta una tabella normale, e il frontend nasconde i singoli campi. Copertura <b>piena</b> del requisito: è la ragione principale per cui questo piano è stato disegnato.",
+  vt:"<b>B, nettamente.</b> È la differenza funzionale più chiara fra i due piani, e l'unico requisito che A copre solo in parte.",
+  price:"<b>Il prezzo:</b> quella copertura arriva dal componente col fornitore più fragile dell'intera architettura. Si compra la granularità dei permessi accettando il rischio Noloco."},
+
+ {n:"Dove vivono i valori derivati", peso:"alto", v:"B",
+  a:"<b>Materializzazione, con Mirror dove possibile.</b> I valori di sintesi sono campi scritti da automazioni; il saldo sul Deal è un Mirror <em>sub condicione</em> di una verifica ancora aperta. Se il Mirror non attraversa il muro di board, il saldo va materializzato: più pezzi mobili.",
+  b:"<b>Rollup e lookup nativi.</b> Il database calcola da sé; la materializzazione resta l'eccezione, non la regola. Nessuna verifica pendente.",
+  vt:"<b>B.</b> Un valore calcolato dal database non può disallinearsi; un valore scritto da un'automazione sì.",
+  price:"<b>Il prezzo:</b> nessuno strutturale. È il vantaggio più «gratuito» che B abbia — ma vale solo se si accettano gli altri costi del piano."},
+
+ {n:"Relazioni molti-a-molti", peso:"basso", v:"B",
+  a:"<b>Board ponte.</b> Monday non ha N:N native: servono board intermedie (Iscrizioni Webinar, Iscrizioni Corsi, Affiliazioni). Funzionano, ma sono oggetti in più da mantenere.",
+  b:"<b>Native.</b> Le tabelle di associazione restano solo dove la relazione porta dati propri — che è comunque il caso per tutte e tre.",
+  vt:"<b>B, ma marginalmente.</b> Nel caso NoLimits tutte le relazioni N:N portano dati propri, quindi le tabelle ponte servirebbero comunque.",
+  price:"<b>Il prezzo:</b> nessuno. Ed è per questo che pesa poco: il vantaggio teorico non si traduce in un vantaggio pratico."},
+
+ {n:"Chiave di aggancio per l'analisi", peso:"medio", v:"A",
+  a:"<b>Item ID del contatto, materializzato dal bus.</b> Cambio strutturale della revisione 2.2: si è passati dall'email a un identificatore stabile, generato dal sistema e condiviso dai due lati. Alleggerisce GDPR, deduplica e governance dei campi materializzati.",
+  b:"<b>Email, portata via lookup nativo.</b> Nessuna copia, ma la chiave resta un dato mutevole, che è anche PII, e che è proprio ciò che differisce nel caso «stessa persona, due email».",
+  vt:"<b>A.</b> È l'asse in cui il Piano A ha fatto la scelta più solida — obbligato dal vincolo del connettore, ha risolto meglio.",
+  price:"<b>Il prezzo:</b> materializzare un identificatore rafforza il lock-in su Monday. Mitigato dal fatto che l'email nativa resta sul contatto."},
+
+ {n:"Forma del rischio di sistema", peso:"medio", v:"dip",
+  a:"<b>Un collo di bottiglia unico.</b> Tutto passa dal bus Zapier. Poche parti mobili, ma un solo punto di rottura, e il modo di rompersi è il <b>fallimento silenzioso</b>. Presidio: la dashboard «salute del sistema».",
+  b:"<b>Quattro soglie distribuite.</b> Righe sincronizzate, record per base, automazioni e workflow al mese. Nessun singolo punto di rottura, ma quattro limiti da sorvegliare — e nessun ambiente di prova separato.",
+  vt:"<b>Dipende dalla preferenza di rischio.</b> Un punto solo da sorvegliare bene, o quattro soglie da tenere d'occhio: sono due profili, non uno migliore.",
+  price:"<b>Il prezzo, in entrambi i casi:</b> qualcuno deve guardare. In A una dashboard settimanale; in B quattro contatori. Il presidio è umano comunque."},
+
+ {n:"Separabilità e reversibilità", peso:"medio", v:"B",
+  a:"<b>Monolite.</b> Dati e interfaccia sono la stessa cosa: cambiare interfaccia significa migrare. Il lock-in è trattato come rischio accettato, reversibile a costo noto, scomposto in dati e logica.",
+  b:"<b>Componenti separati.</b> Il frontend è sostituibile senza toccare i dati: se Noloco diventasse insostenibile, si ripiega sulle interfacce native di Airtable senza migrazione.",
+  vt:"<b>B.</b> Un'architettura in cui il pezzo più fragile è anche quello sostituibile è meglio disegnata.",
+  price:"<b>Il prezzo:</b> due componenti da governare invece di uno, e un confine in più dove le cose possono disallinearsi."},
+
+ {n:"Solidità del fornitore", peso:"alto", v:"A",
+  a:"<b>Monday.</b> Piattaforma consolidata, modello di prezzo prevedibile, nessun segnale di instabilità.",
+  b:"<b>Noloco.</b> Il documento stesso segnala il modello di prezzo instabile e raccomanda il blocco annuale al kickoff, con ricontrollo del modello — non solo dei numeri — a ogni rinnovo.",
+  vt:"<b>A, nettamente.</b> È il rovescio esatto dell'asse F2: il vantaggio di B su permessi e derivati poggia sul componente meno solido.",
+  price:"<b>Il prezzo per B:</b> mitigato — non annullato — dalla sostituibilità del frontend. Il ripiego esiste, ma è comunque un progetto."},
+
+ {n:"Conformità e residenza dei dati", peso:"alto", v:"A",
+  a:"<b>Region UE disponibile</b>, da selezionare alla creazione dell'ambiente. È un gate <b>irreversibile</b> ma risolvibile: si sceglie una volta e si chiude.",
+  b:"<b>Region UE solo sul tier alto</b>, fuori dal budget previsto. La conformità si gestisce per via contrattuale — accordo sul trattamento dati e clausole standard.",
+  vt:"<b>A, nettamente.</b> Un requisito soddisfatto da una scelta di configurazione è più solido dello stesso requisito soddisfatto per via contrattuale.",
+  price:"<b>Il prezzo per B:</b> nessuno immediato, ma un'esposizione strutturale permanente. In un'azienda che tratta dati di persone fisiche, non è un dettaglio."},
+
+ {n:"Esperienza d'uso e adozione", peso:"alto", v:"A",
+  a:"<b>È la ragione della scelta aziendale.</b> Monday è stato scelto privilegiando l'usabilità e la facilità d'uso per un team non tecnico. La decisione è già presa e ha un fondamento.",
+  b:"<b>Da dimostrare.</b> Il piano prevede un prototipo sui momenti operativi reali, confrontando le interfacce con le persone che le useranno. Finché non è fatto, l'adozione è un'ipotesi.",
+  vt:"<b>A per decisione presa; B resta da dimostrare.</b> Non è un giudizio sulla qualità delle due interfacce, ma sullo stato delle prove.",
+  price:"<b>Il prezzo:</b> è anche l'asse più facile da sottovalutare. Un CRM non adottato non è un CRM peggiore: è un archivio."},
+
+ {n:"Ambiente di prova separato", peso:"basso", v:"pari",
+  a:"Non trattato esplicitamente nel documento: non è possibile affermare che esista.",
+  b:"<b>Dichiarato assente.</b> Le modifiche si fanno sull'ambiente vivo.",
+  vt:"<b>Pari, per mancanza di prove.</b> B lo dichiara come limite; A semplicemente non ne parla — il che non significa che ce l'abbia.",
+  price:"<b>Da verificare per A prima di dare un verdetto.</b> È una delle poche caselle davvero vuote del confronto."},
+
+ {n:"Tetti dimensionali", peso:"basso", v:"pari",
+  a:"Quota di 25.000 azioni al mese sulle automazioni interne, ampiamente sufficiente ai volumi attuali.",
+  b:"Quattro tetti espliciti: 25.000 righe sincronizzate per app, 50.000 record per base, 25.000 automazioni e 3.000 workflow al mese.",
+  vt:"<b>Pari ai volumi NoLimits.</b> Undici webinar l'anno con 100-250 iscritti non avvicinano nessuno dei due ai limiti.",
+  price:"<b>Nota:</b> B ha più soglie e più vicine, quindi il margine si consuma prima in caso di crescita forte. Ma è uno scenario, non il presente."},
+
+ {n:"Carico manuale e presidi umani", peso:"basso", v:"pari",
+  a:"Presenze webinar semi-automatiche dopo l'MVP; il resto identico.",
+  b:"Presenze via maschera di caricamento; tabella dedicata per gli assessment; il resto identico.",
+  vt:"<b>Pari, in modo quasi totale.</b> Dei ventinove presidi umani censiti, le differenze fra i due piani sono due, entrambe marginali.",
+  price:"<b>La conseguenza vera:</b> il rischio organizzativo del progetto non si riduce scegliendo l'architettura. Va affrontato a parte."},
+
+ {n:"Costi", peso:"basso", v:"pari",
+  a:"<b>~115-135 € al mese di base</b> (~1.400-1.600 € l'anno), più i mesi di campagna sul bus e alcune voci condizionali da confermare.",
+  b:"<b>~1.650-2.450 € l'anno</b> nello scenario base, a seconda della fatturazione mensile o annuale e del numero di postazioni.",
+  vt:"<b>Pari, di fatto.</b> B costa un po' di più, ma entrambi restano nella stessa fascia: il costo non è un criterio di scelta.",
+  price:"<b>Attenzione però:</b> il costo di B è meno prevedibile, non perché sia più alto, ma perché il modello di prezzo del fornitore lo è."},
+
+ {n:"Assessment e certificazioni", peso:"basso", v:"B",
+  a:"Sotto-elementi della riga di iscrizione, più etichette di sintesi sul contatto. Il filtro per data di scadenza resta rimandato.",
+  b:"Tabella dedicata con date ed esiti, comune ai due canali di erogazione. Il filtro per scadenza funziona nativamente.",
+  vt:"<b>B, su un requisito secondario.</b> Una piccola miglioria reale, non un fattore di scelta.",
+  price:"<b>Il prezzo:</b> una tabella in più. Trascurabile."},
+
+ {n:"Il gate che decide", peso:"alto", v:"dip",
+  a:"<b>Verifica-perno sul Mirror</b> sotto segregazione di board. Tecnica, da fare <b>prima</b> di costruire la struttura. Se fallisce, si sa già cosa succede: il saldo si materializza via automazione, l'architettura diventa più fragile ma resta in piedi.",
+  b:"<b>Prototipo di esperienza d'uso</b> sui momenti operativi reali. Riguarda l'adozione, non la tecnica. Se fallisce, non c'è un ripiego dentro il piano: si torna indietro.",
+  vt:"<b>I due gate non sono simmetrici, ed è la cosa più importante del confronto.</b> Quello di A ha un esito noto e degradabile; quello di B è binario.",
+  price:"<b>Il prezzo:</b> il gate di A si può superare male e andare avanti lo stesso. Quello di B, no. In compenso il gate di B si può fare subito e costa poco: è la verifica più economica dell'intero progetto."}
+];
+
+var board = document.getElementById("board"), filt = {alto:false, div:false};
+function pass(x){
+  if(filt.alto && x.peso !== "alto") return false;
+  if(filt.div && (x.v === "pari" || x.v === "dip")) return false;
+  return true;
+}
+function vlabel(v){ return v === "A" ? "▶ Piano A" : (v === "B" ? "▶ Piano B" : (v === "pari" ? "= pari" : "~ dipende")); }
+function vclass(v){ return v === "A" ? "A" : (v === "B" ? "B" : (v === "pari" ? "pari" : "dip")); }
+
+function tally(){
+  var c = {A:0,B:0,pari:0,dip:0};
+  AXES.forEach(function(x){ c[x.v]++; });
+  var alti = AXES.filter(function(x){ return x.peso === "alto"; }).length;
+  var box = [
+    {n:c.A, l:"assi vinti dal Piano A", x:"contesto: fornitore, conformità, adozione", c:"var(--a)"},
+    {n:c.B, l:"assi vinti dal Piano B", x:"struttura: permessi, derivati, separabilità", c:"var(--b)"},
+    {n:c.pari+c.dip, l:"pari o «dipende»", x:"costi e volumi non discriminano", c:"var(--pari)"},
+    {n:alti, l:"assi ad alto peso", x:"sono questi a decidere", c:"var(--dip)"}
+  ];
+  document.getElementById("tally").innerHTML = box.map(function(b){
+    return '<div class="tl" style="--c:' + b.c + '"><div class="n">' + b.n + '</div><div class="l">' + b.l + '</div><div class="x">' + b.x + '</div></div>';
+  }).join("");
+}
+
+function render(){
+  tally();
+  var vis = AXES.filter(pass);
+  board.innerHTML = vis.map(function(x, k){
+    var i = AXES.indexOf(x) + 1;
+    return '<section class="axis">' +
+      '<div class="ah"><span class="an">' + (i < 10 ? "0" + i : i) + '</span><h2>' + x.n + '</h2>' +
+        '<span class="peso ' + x.peso + '" title="peso nella decisione"><i></i><i></i><i></i> ' + x.peso + '</span>' +
+        '<span class="vd ' + vclass(x.v) + '">' + vlabel(x.v) + '</span></div>' +
+      '<div class="cols">' +
+        '<div class="cell a"><div class="cl">Piano A · Monday</div><p>' + x.a + '</p></div>' +
+        '<div class="cell b"><div class="cl">Piano B · Airtable + Noloco</div><p>' + x.b + '</p></div>' +
+      '</div>' +
+      '<div class="verd"><div class="vl">Il verdetto, e il suo prezzo</div>' +
+        '<div class="vt">' + x.vt + '</div><div class="price">' + x.price + '</div></div>' +
+    '</section>';
+  }).join("");
+}
+Array.prototype.slice.call(document.querySelectorAll(".fl")).forEach(function(b){
+  b.addEventListener("click", function(){
+    filt[b.dataset.f] = !filt[b.dataset.f];
+    b.classList.toggle("on", filt[b.dataset.f]);
+    render();
+  });
+});
+render();
+</script>
+</body>
+</html>
