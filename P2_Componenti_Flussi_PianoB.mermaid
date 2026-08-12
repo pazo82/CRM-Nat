@@ -1,0 +1,93 @@
+%% P2 — Piano B (Airtable + Noloco) · Topologia componenti e flussi dati
+%% Tipo: flowchart. Differenza chiave vs Piano A: DATI (Airtable) e INTERFACCIA (Noloco) sono SEPARATI.
+flowchart LR
+
+  %% ===================== SORGENTI ESTERNE =====================
+  subgraph EXT[" SORGENTI ESTERNE "]
+    direction TB
+    FB["Facebook<br/>Lead Ads"]
+    ML["MailerLite<br/><i>email marketing</i>"]
+    WC["WooCommerce<br/><i>e-commerce</i>"]
+    ZO["Zoom Meeting"]
+    PP["PayPal"]
+    ST["Stripe"]
+    LD["LearnDash<br/><i>e-learning</i>"]
+    GD[("Google Drive<br/>contratti")]
+  end
+
+  %% ===================== BUS DI INTEGRAZIONE =====================
+  ZAP{{"MAKE / ZAPIER · bus<br/>— deduplica per email —<br/>— aggancio al contatto —<br/>(email via LOOKUP, non materializzata)"}}
+
+  %% ===================== CORE: DATI + INTERFACCIA SEPARATI =====================
+  subgraph COREG[" CORE — dati e interfaccia SEPARATI "]
+    direction TB
+    NOL["NOLOCO · frontend<br/>dove lavora il team<br/>viste per ruolo · permessi di CAMPO (F2)<br/>azioni/workflow · mobile PWA<br/><i>tetti: 25k righe sync · 3k workflow/mese</i>"]
+    ATB[("AIRTABLE · DB relazionale<br/>unica base · linked record N:N · rollup/lookup<br/><b>source of truth operativa</b><br/><i>tetti: 50k record/base · 25k automazioni/mese</i>")]
+    NOL <-->|"live-sync via API (quasi real-time)"| ATB
+  end
+
+  %% ===================== BUSINESS INTELLIGENCE =====================
+  subgraph BIG[" BUSINESS INTELLIGENCE "]
+    direction TB
+    GA["Google Analytics"]
+    LK["Looker Studio<br/><i>legge, non scrive mai</i>"]
+    GA --> LK
+  end
+
+  %% ===================== ZONA MANUALE =====================
+  subgraph MANG[" ZONA MANUALE — non integrabile "]
+    direction TB
+    AR["Email Aruba"]
+    WA["WhatsApp"]
+    FT["Fatturazione Aruba"]
+  end
+
+  %% ===================== FRAGILITÀ DI SISTEMA (proprie di B) =====================
+  subgraph RISK[" FRAGILITÀ DI SISTEMA (B) "]
+    direction TB
+    R1[/"4 tetti dimensionali distribuiti<br/>(vedi box Noloco e Airtable)"/]
+    R2[/"nessun ambiente di staging"/]
+    R3[/"fornitore Noloco + pricing instabile<br/>mitigato: frontend sostituibile"/]
+    R4[/"region UE non a budget<br/>GDPR via DPA/SCC"/]
+  end
+
+  %% ===================== FLUSSI =====================
+  FB   -->|"lead · cascata"| ML
+  ML  <-->|"iscrizioni webinar + click-CTA · MVP ON"| ZAP
+  WC   -->|"ordini → Acquisti"| ZAP
+  PP   -->|"pagamenti"| ZAP
+  ST   -->|"pagamenti"| ZAP
+  LD   -->|"completamenti · fase 2"| ZAP
+  ZAP <-->|"crea / aggiorna record"| ATB
+
+  %% il team lavora SEMPRE in Noloco, che scrive su Airtable
+  ZO  -.->|"presenze · maschera di caricamento (Vanessa)"| NOL
+  GD  -.->|"link contratto · manuale"| NOL
+  AR  -.->|"log manuale → Interazioni"| NOL
+  WA  -.->|"log manuale → Interazioni"| NOL
+  FT  -.->|"solo riferimento"| NOL
+
+  %% BI
+  ATB  -->|"sola lettura (via viste pre-unite)"| LK
+  ML   -->|"connettore a pagamento"| LK
+
+  %% ===================== STILI =====================
+  classDef bus    fill:#fde3c0,stroke:#b26a00,stroke-width:2px,color:#5c3600;
+  classDef core   fill:#e5e9f8,stroke:#3550b4,stroke-width:2px,color:#1b2550;
+  classDef bi     fill:#e0efec,stroke:#2b6a63,color:#123f3a;
+  classDef manual fill:#f7e3ec,stroke:#b23a6b,stroke-dasharray:5 3,color:#6d1f43;
+  classDef ext    fill:#eef1f5,stroke:#7a8798,color:#2a333f;
+  classDef risk   fill:#fbe4e4,stroke:#b23a6b,stroke-dasharray:3 2,color:#6d1f43;
+
+  class ZAP bus;
+  class NOL,ATB core;
+  class GA,LK bi;
+  class AR,WA,FT manual;
+  class FB,ML,WC,ZO,PP,ST,LD,GD ext;
+  class R1,R2,R3,R4 risk;
+
+  style EXT fill:#f6f8fa,stroke:#c6cfda,color:#4a5768
+  style COREG fill:#f4f6fd,stroke:#3550b4,color:#1b2550
+  style BIG fill:#f0f7f5,stroke:#2b6a63,color:#123f3a
+  style MANG fill:#fcf1f6,stroke:#b23a6b,color:#6d1f43
+  style RISK fill:#fdeeee,stroke:#b23a6b,color:#6d1f43
