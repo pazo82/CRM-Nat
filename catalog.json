@@ -1,4 +1,8 @@
 [
   { "title": "1. Modello dati CRM [HTML]", "type": "html", "path": "P1_Modello_Dati_CRM.html" },
-  { "title": "1. Modello dati CRM [Mermaid]", "type": "mermaid", "path": "P1_Modello_Dati_CRM.svg" }
+  { "title": "1. Modello dati CRM [Mermaid]", "type": "mermaid", "path": "P1_Modello_Dati_CRM.svg" },
+  { "title": "2. Componenti e Flussi - Piano A [Mermaid]", "type": "mermaid", "path": "P2_Componenti_Flussi_PianoA.svg" },
+  { "title": "2. Componenti e Flussi - Piano B [Mermaid]", "type": "mermaid", "path": "P2_Componenti_Flussi_PianoB.svg" },
+  { "title": "2. Topologia A vs B [HTML]", "type": "html", "path": "P2_Topologia_A_vs_B.html" },
+  { "title": "3. Confronto A vs B [HTML]", "type": "html", "path": "P3_Confronto_A_vs_B.html" }
 ]
