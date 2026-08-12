@@ -1,0 +1,79 @@
+%% P2 — Piano A (Monday) · Topologia componenti e flussi dati
+%% Tipo: flowchart (diverso dall'erDiagram di P1). Frecce = flusso dati; ┈ tratteggio = manuale.
+flowchart LR
+
+  %% ===================== SORGENTI ESTERNE =====================
+  subgraph EXT[" SORGENTI ESTERNE "]
+    direction TB
+    FB["Facebook<br/>Lead Ads"]
+    ML["MailerLite<br/><i>email marketing</i>"]
+    WC["WooCommerce<br/><i>e-commerce</i>"]
+    ZO["Zoom Meeting"]
+    PP["PayPal"]
+    ST["Stripe"]
+    LD["LearnDash<br/><i>e-learning</i>"]
+    GD[("Google Drive<br/>contratti")]
+  end
+
+  %% ===================== BUS DI INTEGRAZIONE =====================
+  ZAP{{"ZAPIER · bus di integrazione<br/>— deduplica per email —<br/>— materializza contatto_id —"}}
+
+  %% ===================== CORE: DATI + INTERFACCIA =====================
+  subgraph COREG[" CORE — dati + interfaccia (un'unica piattaforma) "]
+    direction TB
+    MON["MONDAY CRM<br/>DB + interfaccia<br/><b>source of truth operativa</b>"]
+    SAL[/"Dashboard 'salute del sistema'<br/>rilevatori Principio 6"/]
+    MON --- SAL
+  end
+
+  %% ===================== BUSINESS INTELLIGENCE =====================
+  subgraph BIG[" BUSINESS INTELLIGENCE "]
+    direction TB
+    GA["Google Analytics"]
+    LK["Looker Studio<br/><i>legge, non scrive mai</i>"]
+    GA --> LK
+  end
+
+  %% ===================== ZONA MANUALE =====================
+  subgraph MANG[" ZONA MANUALE — non integrabile "]
+    direction TB
+    AR["Email Aruba"]
+    WA["WhatsApp"]
+    FT["Fatturazione Aruba"]
+  end
+
+  %% ===================== FLUSSI =====================
+  FB   -->|"lead · cascata"| ML
+  ML  <-->|"iscrizioni webinar + click-CTA · MVP ON"| ZAP
+  WC   -->|"ordini &rarr; Acquisti"| ZAP
+  ZO   -->|"presenze · match email (semi-auto)"| ZAP
+  PP   -->|"pagamenti"| ZAP
+  ST   -->|"pagamenti"| ZAP
+  LD   -->|"completamenti · fase 2"| ZAP
+  ZAP <-->|"crea / aggiorna item"| MON
+
+  GD  -.->|"link contratto · manuale"| MON
+  AR  -.->|"log manuale &rarr; Interazioni"| MON
+  WA  -.->|"log manuale &rarr; Interazioni"| MON
+  FT  -.->|"solo riferimento"| MON
+
+  MON  -->|"sola lettura"| LK
+  ML   -->|"connettore a pagamento"| LK
+
+  %% ===================== STILI =====================
+  classDef bus    fill:#fde3c0,stroke:#b26a00,stroke-width:2px,color:#5c3600;
+  classDef core   fill:#e5e9f8,stroke:#3550b4,stroke-width:2px,color:#1b2550;
+  classDef bi     fill:#e0efec,stroke:#2b6a63,color:#123f3a;
+  classDef manual fill:#f7e3ec,stroke:#b23a6b,stroke-dasharray:5 3,color:#6d1f43;
+  classDef ext    fill:#eef1f5,stroke:#7a8798,color:#2a333f;
+
+  class ZAP bus;
+  class MON,SAL core;
+  class GA,LK bi;
+  class AR,WA,FT manual;
+  class FB,ML,WC,ZO,PP,ST,LD,GD ext;
+
+  style EXT fill:#f6f8fa,stroke:#c6cfda,color:#4a5768
+  style COREG fill:#f4f6fd,stroke:#3550b4,color:#1b2550
+  style BIG fill:#f0f7f5,stroke:#2b6a63,color:#123f3a
+  style MANG fill:#fcf1f6,stroke:#b23a6b,color:#6d1f43
