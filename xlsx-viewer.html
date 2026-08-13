@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visualizzatore foglio di calcolo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12141a;
+    --ink: #e8e6df;
+    --muted: #8b8f9b;
+    --line: #2a2e38;
+    --accent: #86efac;
+    --error: #e07a5f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1400px; margin: 0 auto; padding: 32px 24px 96px; }
+  nav { margin-bottom: 24px; }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85rem;
+  }
+  nav a:hover, nav a:focus-visible { color: var(--accent); }
+  h1 {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 500;
+    font-size: 1rem;
+    color: var(--muted);
+    margin: 0 0 16px;
+    word-break: break-all;
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .toolbar label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  select {
+    background: #1c1f27;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85rem;
+  }
+  .frame {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 8px;
+    overflow-x: auto;
+    min-height: 120px;
+  }
+  .status {
+    color: var(--muted);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.9rem;
+    padding: 24px;
+  }
+  .status.error { color: var(--error); }
+  /* Stile della tabella generata da SheetJS */
+  table {
+    border-collapse: collapse;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.85rem;
+    color: #1c1c1a;
+    min-width: 100%;
+  }
+  table td, table th {
+    border: 1px solid #e4e2dc;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+  table tr:first-child {
+    background: #f3f4f6;
+    font-weight: 600;
+    font-family: "Space Grotesk", sans-serif;
+  }
+  table tr:nth-child(even) { background: #fafafa; }
+</style>
+</head>
+<body>
+<main>
+  <nav><a href="index.html">← Catalogo</a></nav>
+  <h1 id="filename">—</h1>
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <label for="sheetSelect">Foglio:</label>
+    <select id="sheetSelect"></select>
+  </div>
+  <div class="frame" id="frame">
+    <p class="status" id="status">Caricamento…</p>
+  </div>
+</main>
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script>
+  const src = new URLSearchParams(window.location.search).get('src');
+  const frame = document.getElementById('frame');
+  const status = document.getElementById('status');
+  const filenameEl = document.getElementById('filename');
+  const toolbar = document.getElementById('toolbar');
+  const sheetSelect = document.getElementById('sheetSelect');
+
+  let workbook = null;
+
+  function renderSheet(name) {
+    const sheet = workbook.Sheets[name];
+    frame.innerHTML = XLSX.utils.sheet_to_html(sheet);
+  }
+
+  if (!src) {
+    status.classList.add('error');
+    status.textContent = 'Parametro ?src= mancante nell\'URL.';
+  } else {
+    filenameEl.textContent = src;
+    fetch(src)
+      .then(res => {
+        if (!res.ok) throw new Error(`File non trovato (${res.status})`);
+        return res.arrayBuffer();
+      })
+      .then(buf => {
+        workbook = XLSX.read(buf, { type: 'array' });
+        const names = workbook.SheetNames;
+
+        if (names.length > 1) {
+          toolbar.style.display = 'flex';
+          sheetSelect.innerHTML = '';
+          names.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            sheetSelect.appendChild(opt);
+          });
+          sheetSelect.addEventListener('change', () => renderSheet(sheetSelect.value));
+        }
+
+        renderSheet(names[0]);
+      })
+      .catch(err => {
+        status.classList.add('error');
+        status.textContent = `Errore nel caricamento del foglio: ${err.message}`;
+        frame.innerHTML = '';
+        frame.appendChild(status);
+      });
+  }
+</script>
+</body>
+</html>
